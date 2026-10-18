@@ -101,7 +101,7 @@ export default function SubmitForm({
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Explain your approach, decisions, what you'd do with more time…"
-          className="w-full rounded-xl border border-green/10 bg-card/60 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green/30 resize-none"
+          className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green/30 resize-none"
         />
       </div>
 
@@ -118,7 +118,7 @@ export default function SubmitForm({
                   links.map((x, j) => (j === i ? e.target.value : x))
                 )
               }
-              className="flex-1 rounded-xl border border-green/10 bg-card/60 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green/30"
+              className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green/30"
             />
             {links.length > 1 && (
               <button
@@ -172,7 +172,7 @@ export default function SubmitForm({
             {files.map((f, i) => (
               <li
                 key={i}
-                className="flex items-center justify-between rounded-xl border border-green/10 bg-card/60 px-4 py-2"
+                className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-2"
               >
                 <span className="truncate text-foreground">{f.name}</span>
                 <button

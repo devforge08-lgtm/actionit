@@ -20,7 +20,7 @@ export default function Navbar() {
   const isHome = pathname === "/";
   const isLogin = pathname === "/login";
   const isCompany = pathname.startsWith("/company");
-  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/gigs") || pathname.startsWith("/submissions");
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/gigs") || pathname.startsWith("/submissions") || pathname.startsWith("/profile");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

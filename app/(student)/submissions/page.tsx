@@ -44,7 +44,7 @@ export default async function MySubmissions({
         </div>
         <Link
           href="/gigs"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-green/15 text-sm font-medium hover:bg-green/5 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-white/[0.06] text-sm font-medium hover:bg-green/5 hover:border-green/15 transition-all"
         >
           Browse gigs
           <ExternalLink className="h-3.5 w-3.5" />
@@ -52,7 +52,7 @@ export default async function MySubmissions({
       </div>
 
       {sent && (
-        <div className="rounded-xl border border-green/20 bg-green/5 p-3 text-sm text-green">
+        <div className="rounded-xl border border-green/20 bg-gradient-to-r from-green/10 to-green/5 p-3 text-sm text-green">
           Submitted! The company will review it and you'll see the status
           here.
         </div>
@@ -60,7 +60,7 @@ export default async function MySubmissions({
 
       {!subs?.length ? (
         <div className="flex flex-col items-center text-center py-16 space-y-4">
-          <div className="p-4 rounded-2xl bg-green/10">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-green/15 to-emerald-900/10 shadow-[0_0_40px_rgba(123,196,127,0.08)]">
             <FileText className="h-8 w-8 text-green" />
           </div>
           <h2 className="text-lg font-semibold">No submissions yet</h2>
@@ -69,7 +69,7 @@ export default async function MySubmissions({
           </p>
           <Link
             href="/gigs"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-green to-emerald-500 text-green-foreground text-sm font-medium hover:shadow-[0_0_20px_rgba(123,196,127,0.3)] transition-all"
           >
             Browse Gigs
           </Link>
@@ -85,7 +85,7 @@ export default async function MySubmissions({
             return (
               <div
                 key={s.id}
-                className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-3 transition-all hover:border-green/20"
+                className="rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.02] to-transparent p-5 space-y-3 transition-all hover:from-green/[0.04] hover:border-green/15"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-0.5 min-w-0 flex-1">

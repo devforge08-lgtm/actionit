@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   IndianRupee,
   Search,
-  AlertTriangle,
   ArrowRight,
   Trophy,
   Zap,
@@ -31,7 +30,6 @@ export default async function StudentDashboard() {
   if (!profile?.role) redirect("/onboarding");
   if (profile.role === "company") redirect("/company");
 
-  // Fetch all submissions with gig details
   const { data: submissions } = await supabase
     .from("submissions")
     .select(
@@ -41,17 +39,16 @@ export default async function StudentDashboard() {
     .order("created_at", { ascending: false });
 
   const subs = submissions ?? [];
-
-  // Stats
   const totalSubmissions = subs.length;
-  const activeSubs = subs.filter((s) => s.status === "submitted" || s.status === "shortlisted");
+  const activeSubs = subs.filter(
+    (s) => s.status === "submitted" || s.status === "shortlisted"
+  );
   const selectedSubs = subs.filter((s) => s.status === "selected");
   const totalEarned = selectedSubs.reduce((sum, s) => {
     const gig = s.gigs as any;
     return sum + (gig?.reward_type === "paid" ? (gig?.reward_amount ?? 0) : 0);
   }, 0);
 
-  // Upcoming deadlines (gigs you've submitted to that still have deadlines)
   const now = Date.now();
   const upcomingDeadlines = activeSubs
     .filter((s) => {
@@ -73,7 +70,6 @@ export default async function StudentDashboard() {
     })
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
-  // Urgent deadlines (due within 1 day)
   const urgentDeadlines = upcomingDeadlines.filter((d) => d.daysLeft <= 1);
 
   const stats = [
@@ -81,35 +77,38 @@ export default async function StudentDashboard() {
       label: "Active Gigs",
       value: activeSubs.length,
       icon: Briefcase,
-      color: "text-green",
-      bgColor: "bg-green/10",
+      gradient: "from-green/20 to-emerald-900/20",
+      iconBg: "bg-green/15",
+      iconColor: "text-green",
     },
     {
       label: "Completed",
       value: selectedSubs.length,
       icon: CheckCircle2,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-400/10",
+      gradient: "from-emerald-500/20 to-teal-900/20",
+      iconBg: "bg-emerald-400/15",
+      iconColor: "text-emerald-400",
     },
     {
       label: "Total Earned",
       value: `₹${totalEarned.toLocaleString("en-IN")}`,
       icon: IndianRupee,
-      color: "text-amber-400",
-      bgColor: "bg-amber-400/10",
+      gradient: "from-amber-500/20 to-orange-900/20",
+      iconBg: "bg-amber-400/15",
+      iconColor: "text-amber-400",
     },
     {
       label: "Submissions",
       value: totalSubmissions,
       icon: Target,
-      color: "text-blue-400",
-      bgColor: "bg-blue-400/10",
+      gradient: "from-blue-500/20 to-indigo-900/20",
+      iconBg: "bg-blue-400/15",
+      iconColor: "text-blue-400",
     },
   ];
 
   return (
     <>
-      {/* Deadline reminder popup */}
       {urgentDeadlines.length > 0 && (
         <DeadlineReminder deadlines={urgentDeadlines} />
       )}
@@ -130,29 +129,29 @@ export default async function StudentDashboard() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-green/10 bg-card/40 p-4 space-y-2"
+              className={`relative overflow-hidden rounded-2xl border border-white/[0.06] p-4 space-y-2 bg-gradient-to-br ${stat.gradient}`}
             >
-              <div
-                className={`inline-flex p-2 rounded-xl ${stat.bgColor}`}
-              >
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,196,127,0.04),transparent_70%)]" />
+              <div className="relative">
+                <div
+                  className={`inline-flex p-2 rounded-xl ${stat.iconBg}`}
+                >
+                  <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
+                </div>
+                <p className="text-2xl font-semibold mt-2">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
               </div>
-              <p className="text-2xl font-semibold">{stat.value}</p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
             </div>
           ))}
         </div>
 
         {totalSubmissions === 0 ? (
-          /* Empty state */
           <div className="flex flex-col items-center text-center py-16 space-y-6">
-            <div className="p-4 rounded-2xl bg-green/10">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-green/15 to-emerald-900/10 shadow-[0_0_40px_rgba(123,196,127,0.08)]">
               <Search className="h-8 w-8 text-green" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold">
-                Find your first gig
-              </h2>
+              <h2 className="text-xl font-semibold">Find your first gig</h2>
               <p className="text-muted-foreground max-w-md text-sm">
                 Browse real tasks from businesses. Submit your work, build
                 your Proof Score, and start earning.
@@ -160,7 +159,7 @@ export default async function StudentDashboard() {
             </div>
             <Link
               href="/gigs"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green text-green-foreground font-medium text-sm hover:bg-green/90 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-green to-emerald-500 text-green-foreground font-medium text-sm hover:shadow-[0_0_20px_rgba(123,196,127,0.3)] transition-all"
             >
               Browse Gigs
               <ArrowRight className="h-4 w-4" />
@@ -186,20 +185,17 @@ export default async function StudentDashboard() {
               ].map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-xl border border-green/10 bg-card/40 p-4 text-center space-y-2"
+                  className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-4 text-center space-y-2"
                 >
                   <item.icon className="h-5 w-5 text-green mx-auto" />
                   <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.desc}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         ) : (
           <>
-            {/* Upcoming deadlines */}
             {upcomingDeadlines.length > 0 && (
               <div className="space-y-3">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -211,7 +207,7 @@ export default async function StudentDashboard() {
                     <Link
                       key={d.gigId}
                       href={`/gigs/${d.gigId}`}
-                      className="flex items-center justify-between rounded-xl border border-green/10 bg-card/40 p-4 hover:border-green/25 hover:bg-green/[0.03] transition-all"
+                      className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-gradient-to-r from-white/[0.02] to-transparent p-4 hover:from-green/[0.04] hover:border-green/15 transition-all"
                     >
                       <div className="space-y-0.5">
                         <p className="text-sm font-medium">{d.title}</p>
@@ -245,12 +241,9 @@ export default async function StudentDashboard() {
               </div>
             )}
 
-            {/* Recent submissions */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  Recent Submissions
-                </h2>
+                <h2 className="text-lg font-semibold">Recent Submissions</h2>
                 <Link
                   href="/submissions"
                   className="text-sm text-green hover:underline"
@@ -271,7 +264,7 @@ export default async function StudentDashboard() {
                     <Link
                       key={s.id}
                       href={`/gigs/${gig?.id}`}
-                      className="flex items-center justify-between rounded-xl border border-green/10 bg-card/40 p-4 hover:border-green/25 hover:bg-green/[0.03] transition-all"
+                      className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-gradient-to-r from-white/[0.02] to-transparent p-4 hover:from-green/[0.04] hover:border-green/15 transition-all"
                     >
                       <div className="space-y-0.5">
                         <p className="text-sm font-medium">
@@ -279,10 +272,7 @@ export default async function StudentDashboard() {
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {gig?.companies?.name ?? "Unknown"} ·{" "}
-                          {formatReward(
-                            gig?.reward_type,
-                            gig?.reward_amount
-                          )}
+                          {formatReward(gig?.reward_type, gig?.reward_amount)}
                         </p>
                       </div>
                       <span

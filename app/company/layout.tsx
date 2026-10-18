@@ -50,23 +50,23 @@ export default function CompanyLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-[#080d09] border-r border-green/10 flex flex-col transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 bg-[linear-gradient(180deg,#060b07_0%,#080d09_40%,#060b07_100%)] border-r border-white/[0.06] flex flex-col transition-transform duration-300 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Sidebar header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-green/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
           <Link
             href="/company"
             className="flex items-center gap-2"
             onClick={() => setOpen(false)}
           >
-            <span className="h-2.5 w-2.5 rounded-full bg-green" />
+            <span className="h-2.5 w-2.5 rounded-full bg-green shadow-[0_0_8px_rgba(123,196,127,0.5)]" />
             <span className="font-semibold tracking-tight">ActionIT</span>
           </Link>
           <button
             onClick={() => setOpen(false)}
-            className="lg:hidden p-1 rounded-md hover:bg-green/10 transition-colors"
+            className="lg:hidden p-1 rounded-md hover:bg-white/[0.04] transition-colors"
           >
             <X className="h-5 w-5 text-muted-foreground" />
           </button>
@@ -83,8 +83,8 @@ export default function CompanyLayout({
                 onClick={() => setOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? "bg-green/10 text-green"
-                    : "text-muted-foreground hover:text-foreground hover:bg-green/5"
+                    ? "bg-gradient-to-r from-green/15 to-green/5 text-green"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/[0.03]"
                 }`}
               >
                 <item.icon className="h-4 w-4" />
@@ -95,10 +95,10 @@ export default function CompanyLayout({
         </nav>
 
         {/* Sign out */}
-        <div className="px-3 py-4 border-t border-green/10">
+        <div className="px-3 py-4 border-t border-white/[0.06]">
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-green/5 transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-white/[0.03] transition-all w-full"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -109,15 +109,15 @@ export default function CompanyLayout({
       {/* Main content */}
       <div className="flex-1 lg:ml-64">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050806]/90 backdrop-blur-md border-b border-green/10 lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050806]/90 backdrop-blur-md border-b border-white/[0.06] lg:hidden">
           <button
             onClick={() => setOpen(true)}
-            className="p-1.5 rounded-md hover:bg-green/10 transition-colors"
+            className="p-1.5 rounded-md hover:bg-white/[0.04] transition-colors"
           >
             <Menu className="h-5 w-5" />
           </button>
           <Link href="/company" className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-green" />
+            <span className="h-2 w-2 rounded-full bg-green shadow-[0_0_8px_rgba(123,196,127,0.5)]" />
             <span className="font-semibold text-sm tracking-tight">
               ActionIT
             </span>

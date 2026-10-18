@@ -37,7 +37,7 @@ export default async function GigBoard() {
 
       {!gigs?.length ? (
         <div className="flex flex-col items-center text-center py-16 space-y-4">
-          <div className="p-4 rounded-2xl bg-green/10">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-green/15 to-emerald-900/10 shadow-[0_0_40px_rgba(123,196,127,0.08)]">
             <Search className="h-8 w-8 text-green" />
           </div>
           <h2 className="text-lg font-semibold">No open gigs right now</h2>
@@ -57,7 +57,7 @@ export default async function GigBoard() {
               <Link
                 key={g.id}
                 href={`/gigs/${g.id}`}
-                className="block rounded-2xl border border-green/10 bg-card/40 p-5 transition-all duration-200 hover:border-green/25 hover:bg-green/[0.03] hover:shadow-[0_0_30px_rgba(123,196,127,0.04)]"
+                className="block rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.02] to-transparent p-5 transition-all duration-200 hover:from-green/[0.04] hover:border-green/15 hover:shadow-[0_0_30px_rgba(123,196,127,0.06)]"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1 min-w-0 flex-1">

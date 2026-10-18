@@ -90,7 +90,7 @@ export default async function GigPage({
         All gigs
       </Link>
 
-      <div className="rounded-2xl border border-green/10 bg-card/40 p-6 space-y-5">
+      <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.02] to-transparent p-6 space-y-5">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold">{gig.title}</h1>
@@ -123,7 +123,7 @@ export default async function GigPage({
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green/10 text-green text-sm font-medium">
             {formatReward(gig.reward_type, gig.reward_amount)}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-green/10 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-muted-foreground">
             {gig.is_remote ? (
               <Wifi className="h-3.5 w-3.5" />
             ) : (
@@ -131,7 +131,7 @@ export default async function GigPage({
             )}
             {gig.is_remote ? "Remote" : gig.location}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-green/10 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-sm text-muted-foreground">
             <Clock className="h-3.5 w-3.5" />
             {formatDeadline(gig.deadline)}
           </span>
@@ -143,7 +143,7 @@ export default async function GigPage({
         </div>
 
         {/* Description */}
-        <div className="space-y-2 border-t border-green/10 pt-5">
+        <div className="space-y-2 border-t border-white/[0.06] pt-5">
           <h2 className="font-semibold">The task</h2>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
             {gig.description}
@@ -151,7 +151,7 @@ export default async function GigPage({
         </div>
 
         {gig.deliverables && (
-          <div className="space-y-2 border-t border-green/10 pt-5">
+          <div className="space-y-2 border-t border-white/[0.06] pt-5">
             <h2 className="font-semibold">What to submit</h2>
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
               {gig.deliverables}
@@ -160,7 +160,7 @@ export default async function GigPage({
         )}
 
         {/* CTA */}
-        <div className="border-t border-green/10 pt-5">
+        <div className="border-t border-white/[0.06] pt-5">
           {isOwner ? (
             <Link
               href={`/company/gigs/${gig.id}/submissions`}

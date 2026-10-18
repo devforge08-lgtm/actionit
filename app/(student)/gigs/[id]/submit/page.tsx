@@ -54,7 +54,7 @@ export default async function SubmitPage({
         Back to gig
       </Link>
 
-      <div className="rounded-2xl border border-green/10 bg-card/40 p-6 space-y-6">
+      <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.02] to-transparent p-6 space-y-6">
         <div>
           <h1 className="text-2xl font-semibold">Submit your work</h1>
           <p className="text-sm text-muted-foreground mt-1">{gig.title}</p>
