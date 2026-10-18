@@ -35,7 +35,7 @@ export default function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-[#050806]/90 backdrop-blur-md border-b border-green/10"
+          ? "bg-[#050806]/90 backdrop-blur-md border-b border-white/[0.06]"
           : "bg-transparent"
       }`}
     >
@@ -106,7 +106,7 @@ export default function Navbar() {
 
       {/* Mobile menu — only on landing page */}
       {isHome && open && (
-        <div className="md:hidden bg-[#050806]/95 backdrop-blur-md border-t border-green/10 px-5 pb-6 pt-2 space-y-4">
+        <div className="md:hidden bg-[#050806]/95 backdrop-blur-md border-t border-white/[0.06] px-5 pb-6 pt-2 space-y-4">
           {navLinks.map((link) => (
             <a
               key={link.href}

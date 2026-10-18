@@ -19,7 +19,7 @@ import {
 
 /* ── Shared glass card style ─────────────────────────────────────── */
 const glassCard =
-  "group relative rounded-2xl border border-green/10 bg-card/40 p-6 transition-all duration-300 hover:border-green/25 hover:bg-green/[0.03] hover:shadow-[0_0_40px_rgba(123,196,127,0.06)]";
+  "group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 transition-all duration-300 hover:border-green/15 hover:from-green/[0.04] hover:shadow-[0_0_30px_rgba(123,196,127,0.06)]";
 
 /* ── Hero ────────────────────────────────────────────────────────── */
 function Hero() {
@@ -33,7 +33,7 @@ function Hero() {
 
       <div className="relative max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 items-center">
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green/20 bg-green/5 text-green text-xs font-medium backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green/20 bg-gradient-to-r from-green/10 to-green/5 text-green text-xs font-medium backdrop-blur-sm">
             <Zap className="h-3 w-3" /> Zero commission — students keep 100%
           </div>
 
@@ -233,7 +233,7 @@ function HowItWorks() {
           <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
             How it works
           </h2>
-          <div className="flex rounded-xl bg-muted/60 backdrop-blur-sm p-1 text-sm w-fit border border-green/10">
+          <div className="flex rounded-xl bg-white/[0.03] backdrop-blur-sm p-1 text-sm w-fit border border-white/[0.06]">
             {(["student", "business"] as const).map((t) => (
               <button
                 key={t}
@@ -389,7 +389,7 @@ function ForBusinesses() {
         <div className="grid sm:grid-cols-3 gap-6">
           {benefits.map((b) => (
             <div key={b.title} className={glassCard}>
-              <div className="h-10 w-10 rounded-lg bg-green/10 group-hover:bg-green/15 flex items-center justify-center transition-colors mb-3">
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green/15 to-green/5 group-hover:from-green/20 flex items-center justify-center transition-colors mb-3">
                 <b.icon className="h-5 w-5 text-green" />
               </div>
               <h3 className="font-semibold text-lg">{b.title}</h3>
@@ -452,10 +452,10 @@ function FAQ() {
           {faqs.map((faq, i) => (
             <div
               key={i}
-              className={`rounded-2xl border border-green/10 bg-card/40 overflow-hidden transition-all duration-300 ${
+              className={`rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.02] to-transparent overflow-hidden transition-all duration-300 ${
                 openIndex === i
-                  ? "border-green/25 bg-green/[0.03] shadow-[0_0_30px_rgba(123,196,127,0.04)]"
-                  : "hover:border-green/20 hover:bg-green/[0.02]"
+                  ? "border-green/15 from-green/[0.04] shadow-[0_0_30px_rgba(123,196,127,0.06)]"
+                  : "hover:border-green/10 hover:from-green/[0.03]"
               }`}
             >
               <button
@@ -492,7 +492,7 @@ function FAQ() {
 function FooterCTA() {
   return (
     <section className="py-20 px-5">
-      <div className="relative max-w-4xl mx-auto text-center space-y-6 rounded-2xl border border-green/15 bg-green/[0.03] backdrop-blur-sm p-10 sm:p-14 overflow-hidden">
+      <div className="relative max-w-4xl mx-auto text-center space-y-6 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-green/[0.05] to-transparent backdrop-blur-sm p-10 sm:p-14 overflow-hidden">
         {/* Glow behind CTA */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-green/8 rounded-full blur-[80px]" />
@@ -524,7 +524,7 @@ function FooterCTA() {
 /* ── Footer ──────────────────────────────────────────────────────── */
 function Footer() {
   return (
-    <footer className="border-t border-green/10 py-8 px-5">
+    <footer className="border-t border-white/[0.06] py-8 px-5">
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <p>&copy; 2026 ActionIT. All rights reserved.</p>
         <div className="flex items-center gap-6">
