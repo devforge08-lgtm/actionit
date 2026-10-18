@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
+  ArrowRight,
   Briefcase,
   GraduationCap,
   Star,
@@ -11,120 +11,380 @@ import {
   Award,
   Crown,
   ChevronDown,
-  ArrowRight,
   Zap,
   Shield,
   Users,
+  CheckCircle2,
+  MousePointer2,
 } from "lucide-react";
 
-/* ── Shared glass card style ─────────────────────────────────────── */
-const glassCard =
-  "group relative overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 transition-all duration-300 hover:border-green/15 hover:from-green/[0.04] hover:shadow-[0_0_30px_rgba(123,196,127,0.06)]";
+/* ─────────────────────────────────────────────────────────────────
+   Living Canvas — interactive orb that follows cursor
+   ───────────────────────────────────────────────────────────────── */
+function LivingCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mouse = useRef({ x: 0.5, y: 0.5 });
+  const frame = useRef(0);
 
-/* ── Hero ────────────────────────────────────────────────────────── */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    let animId: number;
+
+    function resize() {
+      canvas!.width = window.innerWidth;
+      canvas!.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    function onMove(e: MouseEvent) {
+      mouse.current.x = e.clientX / window.innerWidth;
+      mouse.current.y = e.clientY / window.innerHeight;
+    }
+    window.addEventListener("mousemove", onMove);
+
+    function draw() {
+      const w = canvas!.width;
+      const h = canvas!.height;
+      ctx.clearRect(0, 0, w, h);
+      frame.current++;
+
+      const t = frame.current * 0.008;
+      const mx = mouse.current.x;
+      const my = mouse.current.y;
+
+      // Main orb — follows mouse with lag
+      const cx = w * (0.5 + (mx - 0.5) * 0.3);
+      const cy = h * (0.35 + (my - 0.5) * 0.15);
+      const baseR = Math.min(w, h) * 0.18;
+      const breathe = Math.sin(t * 1.2) * 0.06 + 1;
+      const r = baseR * breathe;
+
+      // Outer glow
+      const outerGlow = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 2.5);
+      outerGlow.addColorStop(0, "rgba(123, 196, 127, 0.08)");
+      outerGlow.addColorStop(0.4, "rgba(123, 196, 127, 0.03)");
+      outerGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = outerGlow;
+      ctx.fillRect(0, 0, w, h);
+
+      // Core orb
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, "rgba(123, 196, 127, 0.15)");
+      grad.addColorStop(0.5, "rgba(123, 196, 127, 0.06)");
+      grad.addColorStop(1, "rgba(123, 196, 127, 0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner bright core
+      const innerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.4);
+      innerGrad.addColorStop(0, "rgba(123, 196, 127, 0.25)");
+      innerGrad.addColorStop(1, "rgba(123, 196, 127, 0)");
+      ctx.fillStyle = innerGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Floating particles
+      for (let i = 0; i < 40; i++) {
+        const angle = (i / 40) * Math.PI * 2 + t * (0.3 + (i % 3) * 0.1);
+        const dist = r * (0.6 + Math.sin(t * 2 + i) * 0.8 + (i % 5) * 0.15);
+        const px = cx + Math.cos(angle) * dist;
+        const py = cy + Math.sin(angle) * dist;
+        const pSize = 1 + Math.sin(t * 3 + i * 0.7) * 0.8;
+        const alpha = 0.15 + Math.sin(t * 2 + i) * 0.1;
+
+        ctx.fillStyle = `rgba(123, 196, 127, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(px, py, pSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", onMove);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 0 }}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Scroll-reveal hook
+   ───────────────────────────────────────────────────────────────── */
+function useReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+
+  return { ref, visible };
+}
+
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const { ref, visible } = useReveal(0.12);
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(32px)",
+        transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Magnetic button — subtle pull toward cursor
+   ───────────────────────────────────────────────────────────────── */
+function MagneticButton({
+  children,
+  href,
+  className = "",
+}: {
+  children: React.ReactNode;
+  href: string;
+  className?: string;
+}) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  function onMove(e: React.MouseEvent) {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    setOffset({
+      x: (e.clientX - cx) * 0.2,
+      y: (e.clientY - cy) * 0.2,
+    });
+  }
+
+  function onLeave() {
+    setOffset({ x: 0, y: 0 });
+  }
+
+  return (
+    <Link
+      ref={ref}
+      href={href}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className={className}
+      style={{
+        transform: `translate(${offset.x}px, ${offset.y}px)`,
+        transition: "transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Interactive tilt card
+   ───────────────────────────────────────────────────────────────── */
+function TiltCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState({});
+
+  function onMove(e: React.MouseEvent) {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setStyle({
+      transform: `perspective(600px) rotateY(${x * 8}deg) rotateX(${-y * 8}deg) scale(1.02)`,
+      transition: "transform 0.15s ease",
+    });
+  }
+
+  function onLeave() {
+    setStyle({
+      transform: "perspective(600px) rotateY(0deg) rotateX(0deg) scale(1)",
+      transition: "transform 0.5s ease",
+    });
+  }
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className={className}
+      style={style}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Animated counter
+   ───────────────────────────────────────────────────────────────── */
+function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const { ref, visible } = useReveal(0.3);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!visible) return;
+    let start = 0;
+    const step = Math.max(1, Math.floor(value / 40));
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= value) {
+        setCount(value);
+        clearInterval(timer);
+      } else {
+        setCount(start);
+      }
+    }, 30);
+    return () => clearInterval(timer);
+  }, [visible, value]);
+
+  return (
+    <span ref={ref}>
+      {count}
+      {suffix}
+    </span>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HERO
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function Hero() {
   return (
-    <section className="relative min-h-[90vh] flex items-center pt-24 pb-16 px-5 overflow-hidden">
-      {/* Background glows */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-green/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-green/3 rounded-full blur-[100px]" />
-      </div>
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <LivingCanvas />
 
-      <div className="relative max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 items-center">
-        <div className="space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-green/20 bg-gradient-to-r from-green/10 to-green/5 text-green text-xs font-medium backdrop-blur-sm">
-            <Zap className="h-3 w-3" /> Zero commission — students keep 100%
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
+      <div className="relative z-10 text-center px-5 space-y-8 max-w-3xl mx-auto">
+        <Reveal>
+          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
             Small work.
             <br />
-            <span className="text-green">Real pay.</span>
-            <br />
-            Real proof.
+            <span className="bg-gradient-to-r from-green via-emerald-400 to-green bg-clip-text text-transparent">
+              Real proof.
+            </span>
           </h1>
+        </Reveal>
 
-          <p className="text-muted-foreground text-lg max-w-md leading-relaxed">
+        <Reveal delay={0.2}>
+          <p className="text-muted-foreground text-lg sm:text-xl max-w-xl mx-auto leading-relaxed">
             ActionIT connects college students with businesses for real
-            micro-gigs. Complete tasks, build your Proof Score, and create a
-            verified portfolio that speaks louder than any resume.
+            micro-gigs. Complete tasks, build your Proof Score, and let your
+            work speak louder than any resume.
           </p>
+        </Reveal>
 
-          <div className="flex flex-wrap gap-3 pt-2">
-            <Button
-              asChild
-              size="lg"
-              className="bg-green text-green-foreground hover:bg-green/90 font-medium text-base px-6"
+        <Reveal delay={0.3}>
+          <div className="flex flex-wrap justify-center gap-4 pt-2">
+            <MagneticButton
+              href="/login?signup=1"
+              className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-green to-emerald-500 text-green-foreground font-semibold text-base hover:shadow-[0_0_40px_rgba(123,196,127,0.35)] transition-all duration-500"
             >
-              <Link href="/login?signup=1">
-                Start earning <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="border-green/20 hover:bg-green/5 text-base px-6"
+              Start earning
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </MagneticButton>
+            <MagneticButton
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-white/[0.08] text-foreground font-medium text-base hover:bg-white/[0.04] hover:border-green/20 transition-all duration-500"
             >
-              <a href="#how-it-works">See how it works</a>
-            </Button>
+              See how it works
+            </MagneticButton>
           </div>
-        </div>
+        </Reveal>
 
-        {/* Proof Score preview card */}
-        <div className="hidden lg:block">
-          <div className={`relative mx-auto w-80 backdrop-blur-sm p-6 space-y-5 ${glassCard}`}>
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-green/10 flex items-center justify-center">
-                <Award className="h-6 w-6 text-green" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Proof Score</p>
-                <p className="text-2xl font-bold text-green">742</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tier</span>
-                <span className="text-green font-medium">Proven</span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full w-[74%] rounded-full bg-gradient-to-r from-green/60 to-green" />
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Gigs completed</span>
-                <span className="font-medium">23</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Avg rating</span>
-                <span className="font-medium flex items-center gap-1">
-                  4.8 <Star className="h-3 w-3 text-green fill-green" />
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {["React", "Figma", "Python"].map((s) => (
-                <span
-                  key={s}
-                  className="px-2.5 py-1 rounded-md bg-green/10 text-green text-xs font-medium"
-                >
-                  {s}
-                </span>
-              ))}
-            </div>
-            {/* Decorative glow behind card */}
-            <div className="absolute -top-8 -right-8 w-32 h-32 bg-green/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Scroll indicator */}
+        <Reveal delay={0.5}>
+          <div className="pt-12 flex flex-col items-center gap-2 text-muted-foreground/50">
+            <span className="text-xs tracking-widest uppercase">Scroll</span>
+            <div className="h-10 w-[1px] bg-gradient-to-b from-green/40 to-transparent animate-pulse" />
           </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   STATS BAR
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function StatsBar() {
+  return (
+    <section className="py-16 px-5 flex justify-center">
+      <div className="w-fit rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl shadow-[0_0_40px_rgba(123,196,127,0.04)] px-10 sm:px-16 py-8">
+        <div className="flex flex-col sm:flex-row items-center gap-10 sm:gap-16 text-center">
+          {[
+            { value: 100, suffix: "+", label: "Gig Types", note: "Design to code to data" },
+            { value: 5, suffix: " min", label: "To Post", note: "Businesses go live fast" },
+            { value: 1000, suffix: "", label: "Proof Score Max", note: "Your verified reputation" },
+          ].map((s, i) => (
+            <Reveal key={s.label} delay={i * 0.1}>
+              <div className="space-y-1">
+                <p className="text-3xl sm:text-4xl font-bold text-green">
+                  <Counter value={s.value} suffix={s.suffix} />
+                </p>
+                <p className="text-sm font-medium">{s.label}</p>
+                <p className="text-xs text-muted-foreground">{s.note}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-/* ── What is ActionIT ────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   WHAT IS ACTIONIT
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function WhatIs() {
-  const points = [
+  const cards = [
     {
       icon: Briefcase,
       title: "Real micro-gigs",
@@ -133,40 +393,44 @@ function WhatIs() {
     {
       icon: Shield,
       title: "Verified proof of work",
-      desc: "Every completed gig is recorded on your Proof Score. No faking it.",
+      desc: "Every completed gig is recorded on your Proof Score. No faking it — businesses can verify instantly.",
     },
     {
       icon: Zap,
-      title: "Zero commission",
-      desc: "You keep 100% of what you earn. We never take a cut from students.",
+      title: "0% commission under \u20B91000",
+      desc: "Gigs paying under \u20B91,000 are completely free for students. Above that, a small platform fee applies — you still keep the majority.",
     },
   ];
 
   return (
-    <section id="for-students" className="py-20 px-5">
-      <div className="max-w-6xl mx-auto space-y-12">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            What is ActionIT?
-          </h2>
-          <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-            A platform where college students take on real micro-gigs from
-            businesses, earn real money, and build a portfolio backed by a
-            verifiable Proof Score — not just words on a resume.
-          </p>
-        </div>
+    <section id="for-students" className="py-24 px-5">
+      <div className="max-w-5xl mx-auto space-y-16">
+        <Reveal>
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              What is ActionIT?
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              A platform where college students take on real micro-gigs,
+              earn real money, and build a portfolio backed by a verifiable
+              Proof Score.
+            </p>
+          </div>
+        </Reveal>
 
-        <div className="grid sm:grid-cols-3 gap-6">
-          {points.map((p) => (
-            <div key={p.title} className={glassCard}>
-              <div className="h-10 w-10 rounded-lg bg-green/10 flex items-center justify-center mb-3 group-hover:bg-green/15 transition-colors">
-                <p.icon className="h-5 w-5 text-green" />
-              </div>
-              <h3 className="font-semibold text-lg">{p.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
-                {p.desc}
-              </p>
-            </div>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {cards.map((c, i) => (
+            <Reveal key={c.title} delay={i * 0.12}>
+              <TiltCard className="h-full rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 space-y-4 hover:border-green/15 hover:shadow-[0_0_40px_rgba(123,196,127,0.06)] transition-all duration-500">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green/20 to-green/5 flex items-center justify-center">
+                  <c.icon className="h-5 w-5 text-green" />
+                </div>
+                <h3 className="font-semibold text-lg">{c.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {c.desc}
+                </p>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -174,313 +438,448 @@ function WhatIs() {
   );
 }
 
-/* ── How It Works ────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   HOW IT WORKS — interactive tabs with animated steps
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function HowItWorks() {
   const [tab, setTab] = useState<"student" | "business">("student");
+  const [activeStep, setActiveStep] = useState(0);
 
   const studentSteps = [
-    {
-      num: "01",
-      title: "Sign up & set your skills",
-      desc: "Create your profile and tag the skills you want to prove — from React to Canva.",
-    },
-    {
-      num: "02",
-      title: "Browse & apply to gigs",
-      desc: "Find real micro-tasks posted by businesses. Apply to the ones that match your skills.",
-    },
-    {
-      num: "03",
-      title: "Complete & get paid",
-      desc: "Deliver your work, get reviewed, and receive payment. Zero commission — you keep every rupee.",
-    },
-    {
-      num: "04",
-      title: "Build your Proof Score",
-      desc: "Every completed gig raises your score. Companies can verify your track record instantly.",
-    },
+    { num: "01", title: "Sign up & set your skills", desc: "Create your profile and tag the skills you want to prove — from React to Canva to content writing." },
+    { num: "02", title: "Browse & apply to gigs", desc: "Find real micro-tasks posted by businesses. Filter by skill, reward, or deadline." },
+    { num: "03", title: "Complete & get paid", desc: "Deliver your work, get reviewed, and receive payment. 0% commission on gigs under \u20B91,000 — you keep every rupee." },
+    { num: "04", title: "Build your Proof Score", desc: "Every completed gig raises your score. Companies can verify your track record instantly." },
   ];
 
   const businessSteps = [
-    {
-      num: "01",
-      title: "Post a gig",
-      desc: "Describe the task, set a budget, and publish. It takes under 2 minutes.",
-    },
-    {
-      num: "02",
-      title: "Review applications",
-      desc: "Students apply with their Proof Score visible. Pick the best fit for your task.",
-    },
-    {
-      num: "03",
-      title: "Get it done",
-      desc: "The student delivers. You review, give feedback, and release payment.",
-    },
-    {
-      num: "04",
-      title: "Build your talent pool",
-      desc: "Bookmark top performers. Rehire them for future tasks — no recruitment fees.",
-    },
+    { num: "01", title: "Post a gig", desc: "Describe the task, set a budget, and publish. It takes under 2 minutes." },
+    { num: "02", title: "Review applications", desc: "Students apply with their Proof Score visible. Pick the best fit for your task." },
+    { num: "03", title: "Get it done", desc: "The student delivers. You review, give feedback, and release payment." },
+    { num: "04", title: "Build your talent pool", desc: "Bookmark top performers. Rehire them for future tasks — no recruitment fees." },
   ];
 
   const steps = tab === "student" ? studentSteps : businessSteps;
 
+  useEffect(() => {
+    setActiveStep(0);
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 4);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [tab]);
+
   return (
-    <section id="how-it-works" className="py-20 px-5">
-      <div className="max-w-6xl mx-auto space-y-10">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            How it works
-          </h2>
-          <div className="flex rounded-xl bg-white/[0.03] backdrop-blur-sm p-1 text-sm w-fit border border-white/[0.06]">
-            {(["student", "business"] as const).map((t) => (
+    <section id="how-it-works" className="py-24 px-5">
+      <div className="max-w-5xl mx-auto space-y-12">
+        <Reveal>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              How it works
+            </h2>
+            <div className="flex rounded-2xl bg-white/[0.03] p-1.5 text-sm w-fit border border-white/[0.06]">
+              {(["student", "business"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setTab(t)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 font-medium ${
+                    tab === t
+                      ? "bg-gradient-to-r from-green to-emerald-500 text-green-foreground shadow-[0_0_20px_rgba(123,196,127,0.2)]"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t === "student" ? (
+                    <GraduationCap className="h-4 w-4" />
+                  ) : (
+                    <Briefcase className="h-4 w-4" />
+                  )}
+                  {t === "student" ? "Students" : "Businesses"}
+                </button>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+
+        <div className="grid lg:grid-cols-2 gap-8 items-center">
+          {/* Steps list */}
+          <div className="space-y-3">
+            {steps.map((step, i) => (
               <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all font-medium ${
-                  tab === t
-                    ? "bg-green text-green-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                key={step.num}
+                onClick={() => setActiveStep(i)}
+                className={`w-full text-left rounded-2xl border p-5 transition-all duration-500 ${
+                  activeStep === i
+                    ? "border-green/20 bg-gradient-to-r from-green/[0.06] to-transparent shadow-[0_0_30px_rgba(123,196,127,0.06)]"
+                    : "border-white/[0.04] hover:border-white/[0.08] bg-transparent"
                 }`}
               >
-                {t === "student" ? (
-                  <GraduationCap className="h-4 w-4" />
-                ) : (
-                  <Briefcase className="h-4 w-4" />
+                <div className="flex items-start gap-4">
+                  <span
+                    className={`text-2xl font-bold transition-colors duration-500 ${
+                      activeStep === i ? "text-green" : "text-white/10"
+                    }`}
+                  >
+                    {step.num}
+                  </span>
+                  <div>
+                    <h3 className="font-semibold">{step.title}</h3>
+                    <p
+                      className={`text-sm leading-relaxed mt-1 transition-all duration-500 ${
+                        activeStep === i
+                          ? "text-muted-foreground max-h-20 opacity-100"
+                          : "max-h-0 opacity-0 overflow-hidden"
+                      }`}
+                    >
+                      {step.desc}
+                    </p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                {activeStep === i && (
+                  <div className="mt-3 ml-10 h-[2px] rounded-full bg-white/[0.06] overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green to-emerald-400 rounded-full"
+                      style={{
+                        animation: "progress 6s linear",
+                      }}
+                    />
+                  </div>
                 )}
-                {t === "student" ? "For Students" : "For Businesses"}
               </button>
             ))}
           </div>
-        </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {steps.map((step) => (
-            <div key={step.num} className={`${glassCard} space-y-3`}>
-              <span className="text-green/30 text-3xl font-bold group-hover:text-green/50 transition-colors">
-                {step.num}
-              </span>
-              <h3 className="font-semibold text-lg">{step.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {step.desc}
-              </p>
-            </div>
-          ))}
+          {/* Visual — animated proof score card */}
+          <Reveal delay={0.2}>
+            <TiltCard className="rounded-3xl border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent p-8 space-y-6 relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-green/[0.08] rounded-full blur-[60px] pointer-events-none" />
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-500/[0.05] rounded-full blur-[50px] pointer-events-none" />
+
+              <div className="relative flex items-center gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green/25 to-emerald-900/20 flex items-center justify-center shadow-[0_0_20px_rgba(123,196,127,0.15)]">
+                  <Award className="h-7 w-7 text-green" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Proof Score</p>
+                  <p className="text-3xl font-bold text-green">742</p>
+                </div>
+              </div>
+
+              <div className="relative space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Progress to Elite</span>
+                    <span className="text-green font-medium">74%</span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className="h-full w-[74%] rounded-full bg-gradient-to-r from-green/70 to-green shadow-[0_0_10px_rgba(123,196,127,0.3)]" />
+                  </div>
+                </div>
+
+                {[
+                  { label: "Tier", value: "Proven", color: "text-green" },
+                  { label: "Gigs completed", value: "23", color: "" },
+                  { label: "Avg rating", value: "4.8 ★", color: "text-green" },
+                  { label: "This month", value: "+48 pts", color: "text-emerald-400" },
+                ].map((row) => (
+                  <div key={row.label} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{row.label}</span>
+                    <span className={`font-medium ${row.color}`}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="relative flex flex-wrap gap-2 pt-2">
+                {["React", "Figma", "Python", "Writing"].map((s) => (
+                  <span
+                    key={s}
+                    className="px-3 py-1.5 rounded-lg bg-green/10 text-green text-xs font-medium"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </TiltCard>
+          </Reveal>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── Proof Score ─────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PROOF SCORE TIERS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function ProofScore() {
+  const [activeTier, setActiveTier] = useState<number | null>(null);
+
   const tiers = [
     {
-      name: "Starter",
-      range: "0 – 199",
-      icon: Star,
-      color: "text-zinc-400",
-      bgColor: "bg-zinc-400/10",
-      hoverBg: "group-hover:bg-zinc-400/15",
-      desc: "Just getting started. Complete your first gigs to begin climbing.",
+      name: "Starter", range: "0 \u2013 199", icon: Star, color: "text-zinc-400",
+      gradient: "from-zinc-500/15 to-zinc-800/10", border: "border-zinc-500/20",
+      details: [
+        "Complete your first 3 gigs to unlock Rising tier",
+        "Basic profile badge visible to businesses",
+        "Access to all open gig categories",
+        "Build your portfolio from day one",
+      ],
     },
     {
-      name: "Rising",
-      range: "200 – 499",
-      icon: TrendingUp,
-      color: "text-blue-400",
-      bgColor: "bg-blue-400/10",
-      hoverBg: "group-hover:bg-blue-400/15",
-      desc: "Showing consistency. Businesses start noticing your profile.",
+      name: "Rising", range: "200 \u2013 499", icon: TrendingUp, color: "text-blue-400",
+      gradient: "from-blue-500/15 to-blue-900/10", border: "border-blue-500/20",
+      details: [
+        "Priority placement in gig search results",
+        "Rising badge on your public profile",
+        "Eligible for repeat-hire invitations",
+        "Unlock skill endorsements from businesses",
+      ],
     },
     {
-      name: "Proven",
-      range: "500 – 799",
-      icon: Award,
-      color: "text-green",
-      bgColor: "bg-green/10",
-      hoverBg: "group-hover:bg-green/15",
-      desc: "Strong track record. Priority visibility in gig matching.",
+      name: "Proven", range: "500 \u2013 799", icon: Award, color: "text-green",
+      gradient: "from-green/15 to-emerald-900/10", border: "border-green/20",
+      details: [
+        "Verified badge \u2014 businesses trust your track record",
+        "Featured in \u201cTop Talent\u201d recommendations",
+        "Priority access to high-value gigs (\u20B91,000+)",
+        "Analytics dashboard with performance insights",
+      ],
     },
     {
-      name: "Elite",
-      range: "800 – 1000",
-      icon: Crown,
-      color: "text-amber-400",
-      bgColor: "bg-amber-400/10",
-      hoverBg: "group-hover:bg-amber-400/15",
-      desc: "Top performer. Exclusive gigs and verified badge.",
+      name: "Elite", range: "800 \u2013 1000", icon: Crown, color: "text-amber-400",
+      gradient: "from-amber-500/15 to-orange-900/10", border: "border-amber-500/20",
+      details: [
+        "Exclusive access to premium gigs",
+        "Elite verified badge \u2014 the gold standard",
+        "Direct invitations from partner companies",
+        "Eligible for ActionIT ambassador program",
+      ],
     },
   ];
 
   return (
-    <section id="proof-score" className="py-20 px-5">
-      <div className="max-w-6xl mx-auto space-y-12">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Proof Score
-          </h2>
-          <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-            Your Proof Score is a single number that captures your reliability,
-            skill, and track record. It is built from real completed work — not
-            self-reported claims.
-          </p>
+    <section id="proof-score" className="py-24 px-5">
+      <div className="max-w-5xl mx-auto space-y-16">
+        <Reveal>
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              Proof Score
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              A single number that captures your reliability, skill, and
+              track record \u2014 built from real completed work, not
+              self-reported claims. Click a tier to explore.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {tiers.map((tier, i) => (
+            <Reveal key={tier.name} delay={i * 0.1}>
+              <button
+                onClick={() => setActiveTier(activeTier === i ? null : i)}
+                className="w-full text-left"
+              >
+                <TiltCard
+                  className={`h-full rounded-2xl border bg-gradient-to-br ${tier.gradient} p-5 flex flex-col gap-3 transition-all duration-500 ${
+                    activeTier === i
+                      ? `${tier.border} shadow-[0_0_40px_rgba(123,196,127,0.1)] scale-[1.03]`
+                      : "border-white/[0.06] hover:border-green/10"
+                  }`}
+                >
+                  <div className="h-12 w-12 rounded-xl bg-white/[0.06] flex items-center justify-center">
+                    <tier.icon className={`h-5 w-5 ${tier.color}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{tier.name}</h3>
+                    <p className={`text-sm font-medium ${tier.color}`}>{tier.range}</p>
+                  </div>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {tier.name === "Starter" && "Just getting started. Complete your first gigs to begin climbing."}
+                    {tier.name === "Rising" && "Showing consistency. Businesses start noticing your profile."}
+                    {tier.name === "Proven" && "Strong track record. Priority visibility in gig matching."}
+                    {tier.name === "Elite" && "Top performer. Exclusive gigs and verified badge."}
+                  </p>
+                  <span className={`inline-flex items-center gap-1 text-xs ${tier.color} mt-auto`}>
+                    <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${activeTier === i ? "rotate-180" : ""}`} />
+                  </span>
+                </TiltCard>
+              </button>
+            </Reveal>
+          ))}
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {tiers.map((tier) => (
-            <div key={tier.name} className={`${glassCard} space-y-4`}>
-              <div
-                className={`h-10 w-10 rounded-lg ${tier.bgColor} ${tier.hoverBg} flex items-center justify-center transition-colors`}
-              >
-                <tier.icon className={`h-5 w-5 ${tier.color}`} />
+        {/* Interactive tier detail panel */}
+        <div
+          className={`grid transition-all duration-700 ease-out ${
+            activeTier !== null ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            {activeTier !== null && (
+              <div className="rounded-3xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-md overflow-hidden">
+                <div className={`p-5 sm:p-8 bg-gradient-to-br ${tiers[activeTier].gradient} relative`}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent pointer-events-none" />
+                  <div className="absolute -top-16 -right-16 w-40 h-40 bg-green/[0.06] rounded-full blur-[60px] pointer-events-none" />
+
+                  <div className="relative flex flex-col sm:flex-row items-start gap-6">
+                    <div className={`h-12 w-12 rounded-xl bg-white/[0.06] backdrop-blur-sm flex items-center justify-center border ${tiers[activeTier].border}`}>
+                      {(() => {
+                        const Icon = tiers[activeTier].icon;
+                        return <Icon className={`h-7 w-7 ${tiers[activeTier].color}`} />;
+                      })()}
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-baseline gap-3">
+                        <h3 className="text-xl font-bold">{tiers[activeTier].name}</h3>
+                        <span className={`text-sm font-medium ${tiers[activeTier].color}`}>
+                          {tiers[activeTier].range} pts
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground text-sm max-w-lg">
+                        Here&apos;s what you unlock at the {tiers[activeTier].name} tier:
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="relative mt-6 grid sm:grid-cols-2 gap-2.5">
+                    {tiers[activeTier].details.map((detail, j) => (
+                      <div
+                        key={j}
+                        className="flex items-start gap-3 rounded-xl bg-white/[0.04] backdrop-blur-sm border border-white/[0.06] p-3 hover:bg-white/[0.06] transition-all duration-300"
+                        style={{
+                          opacity: 1,
+                          animation: `fadeSlideIn 0.4s ease ${j * 0.1}s both`,
+                        }}
+                      >
+                        <CheckCircle2 className={`h-4 w-4 mt-0.5 shrink-0 ${tiers[activeTier].color}`} />
+                        <span className="text-sm leading-relaxed">{detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">{tier.name}</h3>
-                <p className={`text-sm font-medium ${tier.color}`}>
-                  {tier.range}
-                </p>
-              </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                {tier.desc}
-              </p>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── For Businesses ──────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOR BUSINESSES
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function ForBusinesses() {
   const benefits = [
-    {
-      icon: Users,
-      title: "Pre-vetted talent",
-      desc: "Every student has a transparent Proof Score. No guesswork — just verified track records.",
-    },
-    {
-      icon: Zap,
-      title: "Fast turnaround",
-      desc: "Micro-gigs are scoped and small. Get results in days, not weeks.",
-    },
-    {
-      icon: Shield,
-      title: "No recruitment overhead",
-      desc: "Post a gig, pick a student, get it done. No agencies, no contracts, no hassle.",
-    },
+    { icon: Users, title: "Pre-vetted talent", desc: "Every student has a transparent Proof Score. No guesswork — just verified track records." },
+    { icon: Zap, title: "Fast turnaround", desc: "Micro-gigs are scoped and small. Get results in days, not weeks." },
+    { icon: Shield, title: "No recruitment overhead", desc: "Post a gig, pick a student, get it done. No agencies, no contracts, no hassle." },
   ];
 
   return (
-    <section id="for-businesses" className="py-20 px-5">
-      <div className="max-w-6xl mx-auto space-y-12">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            For businesses
-          </h2>
-          <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-            Get real work done by motivated students with verified skills.
-            ActionIT makes hiring for small tasks as simple as posting a tweet.
-          </p>
-        </div>
+    <section id="for-businesses" className="py-24 px-5">
+      <div className="max-w-5xl mx-auto space-y-16">
+        <Reveal>
+          <div className="max-w-2xl mx-auto text-center space-y-4">
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+              For businesses
+            </h2>
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Get real work done by motivated students with verified skills.
+              Hiring for small tasks, as simple as posting a tweet.
+            </p>
+          </div>
+        </Reveal>
 
-        <div className="grid sm:grid-cols-3 gap-6">
-          {benefits.map((b) => (
-            <div key={b.title} className={glassCard}>
-              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green/15 to-green/5 group-hover:from-green/20 flex items-center justify-center transition-colors mb-3">
-                <b.icon className="h-5 w-5 text-green" />
-              </div>
-              <h3 className="font-semibold text-lg">{b.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed mt-2">
-                {b.desc}
-              </p>
-            </div>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {benefits.map((b, i) => (
+            <Reveal key={b.title} delay={i * 0.12}>
+              <TiltCard className="h-full rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6 space-y-4 hover:border-green/15 hover:shadow-[0_0_40px_rgba(123,196,127,0.06)] transition-all duration-500">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green/20 to-green/5 flex items-center justify-center">
+                  <b.icon className="h-5 w-5 text-green" />
+                </div>
+                <h3 className="font-semibold text-lg">{b.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {b.desc}
+                </p>
+              </TiltCard>
+            </Reveal>
           ))}
         </div>
 
-        <Button
-          asChild
-          size="lg"
-          className="bg-green text-green-foreground hover:bg-green/90 font-medium"
-        >
-          <Link href="/login?signup=1">
-            Post your first gig <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+        <Reveal delay={0.2}>
+          <div className="text-center">
+            <MagneticButton
+              href="/login?signup=1"
+              className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-white/[0.08] font-semibold text-base hover:bg-green/[0.06] hover:border-green/20 hover:shadow-[0_0_30px_rgba(123,196,127,0.1)] transition-all duration-500"
+            >
+              Post your first gig
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </MagneticButton>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
 }
 
-/* ── FAQ ─────────────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FAQ
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function FAQ() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   const faqs = [
-    {
-      q: "Is ActionIT free for students?",
-      a: "Yes. Signing up is free and we charge zero commission on your earnings. You keep 100% of what you make.",
-    },
-    {
-      q: "What kind of gigs are available?",
-      a: "Everything from social media design and website tweaks to data entry, content writing, video editing, and more. Gigs are real tasks from real businesses.",
-    },
-    {
-      q: "How does the Proof Score work?",
-      a: "Your Proof Score is calculated from the number of gigs you complete, ratings from businesses, consistency, and the complexity of tasks. It is a verifiable metric — businesses can check it before hiring you.",
-    },
-    {
-      q: "How do businesses post gigs?",
-      a: "Sign up as a business, describe your task, set a budget, and publish. Students can apply within minutes.",
-    },
-    {
-      q: "Can I use ActionIT while in college?",
-      a: "Absolutely. ActionIT is built for college students. Gigs are scoped to be manageable alongside your coursework.",
-    },
+    { q: "Is ActionIT free for students?", a: "Yes. Signing up is free and we charge zero commission on gigs paying under \u20B91,000. For higher-paying gigs, a small platform fee applies — but you always keep the majority." },
+    { q: "What kind of gigs are available?", a: "Everything from social media design and website tweaks to data entry, content writing, video editing, and more. Gigs are real tasks from real businesses." },
+    { q: "How does the Proof Score work?", a: "Your Proof Score is calculated from the number of gigs you complete, ratings from businesses, consistency, and the complexity of tasks. It is a verifiable metric — businesses can check it before hiring you." },
+    { q: "How do businesses post gigs?", a: "Sign up as a business, describe your task, set a budget, and publish. Students can apply within minutes." },
+    { q: "Can I use ActionIT while in college?", a: "Absolutely. ActionIT is built for college students. Gigs are scoped to be manageable alongside your coursework." },
   ];
 
   return (
-    <section className="py-20 px-5">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-          Questions? Answered.
-        </h2>
+    <section className="py-24 px-5">
+      <div className="max-w-3xl mx-auto space-y-10">
+        <Reveal>
+          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center">
+            Questions? Answered.
+          </h2>
+        </Reveal>
 
         <div className="space-y-3">
           {faqs.map((faq, i) => (
-            <div
-              key={i}
-              className={`rounded-2xl border border-white/[0.06] bg-gradient-to-r from-white/[0.02] to-transparent overflow-hidden transition-all duration-300 ${
-                openIndex === i
-                  ? "border-green/15 from-green/[0.04] shadow-[0_0_30px_rgba(123,196,127,0.06)]"
-                  : "hover:border-green/10 hover:from-green/[0.03]"
-              }`}
-            >
-              <button
-                onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                className="flex items-center justify-between w-full px-6 py-4 text-left"
-              >
-                <span className="font-medium pr-4">{faq.q}</span>
-                <ChevronDown
-                  className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-300 ${
-                    openIndex === i ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+            <Reveal key={i} delay={i * 0.06}>
               <div
-                className={`grid transition-all duration-300 ${
-                  openIndex === i ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                className={`rounded-2xl border overflow-hidden transition-all duration-500 ${
+                  openIndex === i
+                    ? "border-green/15 bg-gradient-to-r from-green/[0.04] to-transparent shadow-[0_0_30px_rgba(123,196,127,0.06)]"
+                    : "border-white/[0.06] hover:border-white/[0.1]"
                 }`}
               >
-                <div className="overflow-hidden">
-                  <div className="px-6 pb-4 text-muted-foreground text-sm leading-relaxed">
-                    {faq.a}
+                <button
+                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                  className="flex items-center justify-between w-full px-6 py-5 text-left"
+                >
+                  <span className="font-medium pr-4">{faq.q}</span>
+                  <ChevronDown
+                    className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-500 ${
+                      openIndex === i ? "rotate-180 text-green" : ""
+                    }`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-all duration-500 ${
+                    openIndex === i ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-6 pb-5 text-muted-foreground text-sm leading-relaxed">
+                      {faq.a}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -488,44 +887,48 @@ function FAQ() {
   );
 }
 
-/* ── Footer CTA ──────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOTER CTA
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function FooterCTA() {
   return (
-    <section className="py-20 px-5">
-      <div className="relative max-w-4xl mx-auto text-center space-y-6 rounded-2xl border border-white/[0.06] bg-gradient-to-br from-green/[0.05] to-transparent backdrop-blur-sm p-10 sm:p-14 overflow-hidden">
-        {/* Glow behind CTA */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-green/8 rounded-full blur-[80px]" />
-        </div>
+    <section className="py-24 px-5">
+      <Reveal>
+        <div className="relative max-w-4xl mx-auto text-center space-y-8 rounded-3xl border border-white/[0.06] bg-gradient-to-br from-green/[0.06] to-transparent p-12 sm:p-16 overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-green/[0.08] rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 right-1/4 w-[300px] h-[200px] bg-emerald-500/[0.05] rounded-full blur-[80px]" />
+          </div>
 
-        <h2 className="relative text-3xl sm:text-4xl font-bold tracking-tight">
-          Ready to prove yourself?
-        </h2>
-        <p className="relative text-muted-foreground text-lg max-w-lg mx-auto">
-          Join ActionIT and start building a portfolio that actually matters.
-          Your first gig is one click away.
-        </p>
-        <div className="relative flex flex-wrap justify-center gap-3 pt-2">
-          <Button
-            asChild
-            size="lg"
-            className="bg-green text-green-foreground hover:bg-green/90 font-medium text-base px-8"
-          >
-            <Link href="/login?signup=1">
-              Get started free <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+          <h2 className="relative text-3xl sm:text-4xl font-bold tracking-tight">
+            Ready to prove yourself?
+          </h2>
+          <p className="relative text-muted-foreground text-lg max-w-lg mx-auto">
+            Join ActionIT and start building a portfolio that actually
+            matters. Your first gig is one click away.
+          </p>
+          <div className="relative">
+            <MagneticButton
+              href="/login?signup=1"
+              className="group inline-flex items-center gap-2 px-10 py-4 rounded-2xl bg-gradient-to-r from-green to-emerald-500 text-green-foreground font-semibold text-base hover:shadow-[0_0_50px_rgba(123,196,127,0.4)] transition-all duration-500"
+            >
+              Get started free
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </MagneticButton>
+          </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }
 
-/* ── Footer ──────────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FOOTER
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 function Footer() {
   return (
-    <footer className="border-t border-white/[0.06] py-8 px-5">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+    <footer className="border-t border-white/[0.04] py-8 px-5">
+      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
         <p>&copy; 2026 ActionIT. All rights reserved.</p>
         <div className="flex items-center gap-6">
           <a
@@ -545,18 +948,33 @@ function Footer() {
   );
 }
 
-/* ── Page ─────────────────────────────────────────────────────────── */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   PAGE — with keyframe for progress bar
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 export default function HomePage() {
   return (
-    <main>
-      <Hero />
-      <WhatIs />
-      <HowItWorks />
-      <ProofScore />
-      <ForBusinesses />
-      <FAQ />
-      <FooterCTA />
-      <Footer />
-    </main>
+    <>
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes progress {
+          from { width: 0; }
+          to { width: 100%; }
+        }
+      `}</style>
+      <main className="overflow-x-hidden">
+        <Hero />
+        <StatsBar />
+        <WhatIs />
+        <HowItWorks />
+        <ProofScore />
+        <ForBusinesses />
+        <FAQ />
+        <FooterCTA />
+        <Footer />
+      </main>
+    </>
   );
 }
