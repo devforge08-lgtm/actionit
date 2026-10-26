@@ -23,7 +23,7 @@ export default async function MyGigsPage() {
   const { data: gigs } = await supabase
     .from("gigs")
     .select(
-      "id, title, status, reward_type, reward_amount, deadline, created_at, submissions(count)"
+      "id, title, status, reward_type, reward_amount, deadline, max_applicants, created_at, submissions(count)"
     )
     .eq("company_id", company.id)
     .order("created_at", { ascending: false });
@@ -47,7 +47,7 @@ export default async function MyGigsPage() {
 
       {!gigs?.length ? (
         <div className="text-center py-16 space-y-3">
-          <div className="h-14 w-14 rounded-2xl bg-green/10 flex items-center justify-center mx-auto">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green/20 to-green/5 flex items-center justify-center mx-auto">
             <Briefcase className="h-7 w-7 text-green" />
           </div>
           <p className="text-muted-foreground">
@@ -62,7 +62,7 @@ export default async function MyGigsPage() {
             return (
               <div
                 key={g.id}
-                className="rounded-xl border border-green/10 bg-card/40 p-4 flex items-center justify-between gap-4 hover:border-green/20 hover:bg-green/[0.02] transition-all"
+                className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-4 flex items-center justify-between gap-4 hover:border-green/15 hover:from-green/[0.04] hover:shadow-[0_0_30px_rgba(123,196,127,0.06)] transition-all"
               >
                 <div className="min-w-0">
                   <Link
@@ -93,7 +93,7 @@ export default async function MyGigsPage() {
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Users className="h-3.5 w-3.5" />
-                    {count}
+                    {count}/{g.max_applicants}
                   </Link>
                   {g.status === "draft" && (
                     <form

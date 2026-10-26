@@ -9,6 +9,7 @@ import {
   Wifi,
   ExternalLink,
   CheckCircle2,
+  Users,
 } from "lucide-react";
 
 export async function generateMetadata({
@@ -41,7 +42,7 @@ export default async function GigPage({
 
   const { data: gig } = await supabase
     .from("gigs")
-    .select("*, companies(name, verified, website, owner_id)")
+    .select("*, companies(name, verified, website, owner_id), submissions(count)")
     .eq("id", id)
     .single();
   if (!gig) notFound();
@@ -75,10 +76,13 @@ export default async function GigPage({
       alreadySubmitted = !!s;
     }
   }
+  const submissionCount = (gig.submissions as unknown as { count: number }[])?.[0]?.count ?? 0;
+  const slotsLeft = gig.max_applicants - submissionCount;
   const isOwner = user?.id === company.owner_id;
   const open =
     gig.status === "published" &&
-    (!gig.deadline || new Date(gig.deadline) > new Date());
+    (!gig.deadline || new Date(gig.deadline) > new Date()) &&
+    slotsLeft > 0;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -135,6 +139,10 @@ export default async function GigPage({
             <Clock className="h-3.5 w-3.5" />
             {formatDeadline(gig.deadline)}
           </span>
+          <span className={"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium " + (slotsLeft <= 1 ? "bg-amber-400/10 text-amber-400" : "bg-white/[0.03] border border-white/[0.06] text-muted-foreground")}>
+            <Users className="h-3.5 w-3.5" />
+            {slotsLeft <= 0 ? "Full" : slotsLeft === 1 ? "1 spot left" : `${slotsLeft} spots left`}
+          </span>
           {gig.status !== "published" && (
             <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-amber-400/10 text-amber-400 text-sm font-medium uppercase">
               {gig.status}
@@ -180,7 +188,7 @@ export default async function GigPage({
               disabled
               className="px-5 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm font-medium cursor-not-allowed"
             >
-              This gig is closed
+              {slotsLeft <= 0 ? "All spots filled" : "This gig is closed"}
             </button>
           ) : !user ? (
             <Link

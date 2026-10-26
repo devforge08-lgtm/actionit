@@ -106,7 +106,7 @@ export default async function CompanyDashboard() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-3"
+                className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-3"
               >
                 <div
                   className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center`}
@@ -142,7 +142,7 @@ export default async function CompanyDashboard() {
                   <Link
                     key={g.id}
                     href={`/company/gigs/${g.id}/submissions`}
-                    className="flex items-center justify-between gap-4 rounded-xl border border-green/10 bg-card/40 p-4 hover:border-green/20 hover:bg-green/[0.02] transition-all"
+                    className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-4 hover:border-green/15 hover:from-green/[0.04] hover:shadow-[0_0_30px_rgba(123,196,127,0.06)] transition-all"
                   >
                     <div className="min-w-0">
                       <p className="font-medium truncate">{g.title}</p>
@@ -185,7 +185,7 @@ export default async function CompanyDashboard() {
       ) : (
         /* ── Empty state ──────────────────────────────────── */
         <div className="flex flex-col items-center justify-center text-center py-16 px-4 space-y-6">
-          <div className="h-16 w-16 rounded-2xl bg-green/10 flex items-center justify-center">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-green/20 to-green/5 flex items-center justify-center">
             <Briefcase className="h-8 w-8 text-green" />
           </div>
           <div className="space-y-2 max-w-md">
@@ -228,7 +228,7 @@ export default async function CompanyDashboard() {
             ].map((card) => (
               <div
                 key={card.title}
-                className="rounded-xl border border-green/10 bg-card/40 p-4 space-y-2 text-left"
+                className="rounded-xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-4 space-y-2 text-left"
               >
                 <card.icon className="h-4 w-4 text-green" />
                 <p className="text-sm font-medium">{card.title}</p>

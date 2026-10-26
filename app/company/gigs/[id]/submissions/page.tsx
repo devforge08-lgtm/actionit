@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { reviewSubmission } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, ExternalLink, Paperclip } from "lucide-react";
+import { ArrowLeft, FileText, ExternalLink, Paperclip, Star } from "lucide-react";
 
 export default async function ReviewPage({
   params,
@@ -20,7 +20,7 @@ export default async function ReviewPage({
 
   const { data: gig } = await supabase
     .from("gigs")
-    .select("id, title, companies(owner_id)")
+    .select("id, title, max_applicants, companies(owner_id)")
     .eq("id", id)
     .single();
   if (!gig) notFound();
@@ -30,7 +30,7 @@ export default async function ReviewPage({
   const { data: subs } = await supabase
     .from("submissions")
     .select(
-      "id, note, links, file_paths, status, feedback, created_at, profiles(full_name, username, college)"
+      "id, note, links, file_paths, status, feedback, rating, created_at, profiles(full_name, username, college)"
     )
     .eq("gig_id", id)
     .order("created_at", { ascending: true });
@@ -59,13 +59,13 @@ export default async function ReviewPage({
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Submissions</h1>
         <p className="text-muted-foreground">
-          {gig.title} · {subs?.length ?? 0} total
+          {gig.title} · {subs?.length ?? 0} / {gig.max_applicants} applicants
         </p>
       </div>
 
       {!subs?.length ? (
         <div className="text-center py-16 space-y-3">
-          <div className="h-14 w-14 rounded-2xl bg-green/10 flex items-center justify-center mx-auto">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green/20 to-green/5 flex items-center justify-center mx-auto">
             <FileText className="h-7 w-7 text-green" />
           </div>
           <p className="text-muted-foreground">No submissions yet.</p>
@@ -81,7 +81,7 @@ export default async function ReviewPage({
             return (
               <div
                 key={s.id}
-                className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-4"
+                className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-4"
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -149,7 +149,7 @@ export default async function ReviewPage({
 
                 <form
                   action={reviewSubmission}
-                  className="space-y-3 border-t border-green/10 pt-4"
+                  className="space-y-3 border-t border-white/[0.06] pt-4"
                 >
                   <input type="hidden" name="id" value={s.id} />
                   <input type="hidden" name="gig_id" value={id} />
@@ -158,8 +158,19 @@ export default async function ReviewPage({
                     rows={2}
                     defaultValue={s.feedback ?? ""}
                     placeholder="Feedback for the student (they'll see this)"
-                    className="border-green/15 focus-visible:ring-green/30"
+                    className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
                   />
+                  <div className="space-y-2">
+                    <label className="text-xs text-muted-foreground">Rate this submission (1-5)</label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((v) => (
+                        <label key={v} className="cursor-pointer">
+                          <input type="radio" name="rating" value={v} defaultChecked={s.rating === v} className="sr-only peer" />
+                          <Star className="h-5 w-5 text-muted-foreground/30 peer-checked:text-amber-400 peer-checked:fill-amber-400 hover:text-amber-400/60 transition-colors" />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
                     <Button
                       name="status"

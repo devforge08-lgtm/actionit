@@ -30,7 +30,7 @@ export default function NewGigPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-green/10 bg-card/40 p-6">
+      <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-6">
         <form action={onSubmit} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
@@ -39,7 +39,7 @@ export default function NewGigPage() {
               name="title"
               placeholder="Design a landing page hero section"
               required
-              className="border-green/15 focus-visible:ring-green/30"
+              className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
             />
           </div>
 
@@ -51,7 +51,7 @@ export default function NewGigPage() {
               rows={6}
               placeholder="Context, requirements, tools, anything students should know…"
               required
-              className="border-green/15 focus-visible:ring-green/30"
+              className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
             />
           </div>
 
@@ -62,7 +62,7 @@ export default function NewGigPage() {
               name="deliverables"
               rows={3}
               placeholder="e.g. Figma link + a short note explaining your choices"
-              className="border-green/15 focus-visible:ring-green/30"
+              className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
             />
           </div>
 
@@ -74,7 +74,7 @@ export default function NewGigPage() {
                 name="reward_type"
                 value={rewardType}
                 onChange={(e) => setRewardType(e.target.value)}
-                className="w-full h-9 rounded-md border border-green/15 bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green/30"
+                className="w-full h-9 rounded-md border border-white/[0.06] bg-white/[0.03] px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green/30"
               >
                 <option value="paid">Paid</option>
                 <option value="certificate">Certificate</option>
@@ -91,7 +91,7 @@ export default function NewGigPage() {
                   type="number"
                   min="0"
                   placeholder="2000"
-                  className="border-green/15 focus-visible:ring-green/30"
+                  className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
                 />
               </div>
             )}
@@ -104,7 +104,7 @@ export default function NewGigPage() {
                 id="deadline"
                 name="deadline"
                 type="date"
-                className="border-green/15 focus-visible:ring-green/30"
+                className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
               />
             </div>
             <div className="space-y-2">
@@ -129,7 +129,7 @@ export default function NewGigPage() {
                 id="location"
                 name="location"
                 placeholder="Bengaluru"
-                className="border-green/15 focus-visible:ring-green/30"
+                className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
               />
             </div>
           )}
@@ -156,7 +156,7 @@ export default function NewGigPage() {
               value="draft"
               variant="outline"
               disabled={pending}
-              className="border-green/15 hover:bg-green/5"
+              className="border-white/[0.06] hover:bg-green/[0.04] hover:border-green/15"
             >
               Save as draft
             </Button>

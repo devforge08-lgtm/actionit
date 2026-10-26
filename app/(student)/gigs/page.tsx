@@ -7,6 +7,7 @@ import {
   Wifi,
   Search,
   Briefcase,
+  Users,
 } from "lucide-react";
 
 export const metadata = {
@@ -20,7 +21,7 @@ export default async function GigBoard() {
   const { data: gigs } = await supabase
     .from("gigs")
     .select(
-      "id, title, description, reward_type, reward_amount, deadline, is_remote, location, companies(name, verified)"
+      "id, title, description, reward_type, reward_amount, deadline, is_remote, location, max_applicants, companies(name, verified), submissions(count)"
     )
     .eq("status", "published")
     .order("published_at", { ascending: false })
@@ -88,6 +89,16 @@ export default async function GigBoard() {
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {formatDeadline(g.deadline)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    {(() => {
+                      const count = (g.submissions as unknown as { count: number }[])?.[0]?.count ?? 0;
+                      const left = g.max_applicants - count;
+                      return left <= 1
+                        ? <span className="text-amber-400">{left} spot left</span>
+                        : `${left} spots left`;
+                    })()}
                   </span>
                 </div>
               </Link>

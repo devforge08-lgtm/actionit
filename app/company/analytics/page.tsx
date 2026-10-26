@@ -104,7 +104,7 @@ export default async function AnalyticsPage() {
 
       {allGigs.length === 0 ? (
         <div className="text-center py-16">
-          <div className="h-14 w-14 rounded-2xl bg-green/10 flex items-center justify-center mx-auto mb-4">
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green/20 to-green/5 flex items-center justify-center mx-auto mb-4">
             <TrendingUp className="h-7 w-7 text-green" />
           </div>
           <h2 className="text-lg font-semibold">No data yet</h2>
@@ -152,7 +152,7 @@ export default async function AnalyticsPage() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-3"
+                className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-3"
               >
                 <div
                   className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center`}
@@ -171,7 +171,7 @@ export default async function AnalyticsPage() {
           </div>
 
           {/* Gigs over time - simple bar chart */}
-          <div className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-4">
+          <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-green" />
               <h3 className="font-semibold">Gigs posted — last 6 months</h3>
@@ -186,7 +186,7 @@ export default async function AnalyticsPage() {
                     {m.count}
                   </span>
                   <div
-                    className="w-full bg-green/20 rounded-md transition-all hover:bg-green/30"
+                    className="w-full bg-gradient-to-t from-green/30 to-green/15 rounded-md transition-all hover:from-green/40 hover:to-green/20"
                     style={{
                       height: `${(m.count / maxCount) * 100}%`,
                       minHeight: m.count > 0 ? "8px" : "2px",
@@ -202,7 +202,7 @@ export default async function AnalyticsPage() {
 
           {/* Additional stats */}
           <div className="grid sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-3">
+            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-amber-400" />
                 <h3 className="font-semibold">Selection Rate</h3>
@@ -214,7 +214,7 @@ export default async function AnalyticsPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-3">
+            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-3">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-blue-400" />
                 <h3 className="font-semibold">Avg per Gig</h3>
@@ -232,7 +232,7 @@ export default async function AnalyticsPage() {
 
           {/* Top gigs by applications */}
           {allGigs.length > 0 && (
-            <div className="rounded-2xl border border-green/10 bg-card/40 p-5 space-y-4">
+            <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-4">
               <h3 className="font-semibold">Top gigs by applications</h3>
               <div className="space-y-3">
                 {[...allGigs]
@@ -267,7 +267,7 @@ export default async function AnalyticsPage() {
                         </div>
                         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-green/40"
+                            className="h-full rounded-full bg-gradient-to-r from-green/50 to-green/30"
                             style={{
                               width: `${(count / maxSubs) * 100}%`,
                             }}

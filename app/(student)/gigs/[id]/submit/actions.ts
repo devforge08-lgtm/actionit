@@ -15,6 +15,20 @@ export async function createSubmission(input: {
   if (input.filePaths.some((p) => !p.startsWith(prefix))) return { error: "Invalid file path" };
   if (input.links.some((l) => !/^https?:\/\//i.test(l))) return { error: "Invalid link" };
 
+  // Check if gig still has spots
+  const { data: gig } = await supabase
+    .from("gigs")
+    .select("max_applicants, status")
+    .eq("id", input.gigId)
+    .single();
+  if (!gig || gig.status !== "published") return { error: "This gig is no longer accepting submissions" };
+
+  const { count } = await supabase
+    .from("submissions")
+    .select("id", { count: "exact", head: true })
+    .eq("gig_id", input.gigId);
+  if ((count ?? 0) >= gig.max_applicants) return { error: "All spots for this gig have been filled" };
+
   const { error } = await supabase.from("submissions").insert({
     gig_id: input.gigId,
     student_id: user.id,
