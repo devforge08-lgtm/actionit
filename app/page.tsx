@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import ShaderField from "@/components/brand/shader-field";
 import {
-  Marquee,
   Num,
   ProofRing,
   SectionLabel,
@@ -204,14 +203,6 @@ function Hero() {
 
       <div className="relative z-10 text-center px-5 space-y-8 max-w-4xl mx-auto">
         <Reveal>
-          <p className="brand-eyebrow text-green/80 flex items-center justify-center gap-3">
-            <span className="h-px w-8 bg-green/40" />
-            Micro-gigs for college students
-            <span className="h-px w-8 bg-green/40" />
-          </p>
-        </Reveal>
-
-        <Reveal delay={0.1}>
           <h1 className="brand-display text-[clamp(3rem,13vw,8.5rem)]">
             Small work.
             <br />
@@ -896,17 +887,6 @@ export default function HomePage() {
       `}</style>
       <main className="overflow-x-hidden">
         <Hero />
-        <Marquee
-          items={[
-            "Poster design \u20b9400",
-            "Reels editing \u20b9750",
-            "Landing page copy \u20b9900",
-            "Data cleanup \u20b9500",
-            "0% commission under \u20b91,000",
-            "Max 3 applicants per gig",
-            "Proof Score 0 \u2013 1000",
-          ]}
-        />
         <StatsBar />
         <WhatIs />
         <HowItWorks />
