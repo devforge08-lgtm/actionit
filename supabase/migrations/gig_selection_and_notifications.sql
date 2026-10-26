@@ -1,7 +1,31 @@
 -- =====================================================
 -- Gig applications, winner selection, business notifications
--- Run after gig_lifecycle.sql
+-- Safe to run more than once. Includes the columns from add_profile_fields.sql
+-- and gig_lifecycle.sql in case those were never run.
 -- =====================================================
+
+-- 0. Columns this relies on
+ALTER TABLE gigs
+  ADD COLUMN IF NOT EXISTS max_applicants int NOT NULL DEFAULT 3,
+  ADD COLUMN IF NOT EXISTS published_at timestamptz;
+
+ALTER TABLE submissions
+  ADD COLUMN IF NOT EXISTS rating smallint;
+
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS proof_score int NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS bio text,
+  ADD COLUMN IF NOT EXISTS college text,
+  ADD COLUMN IF NOT EXISTS skills text[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS github text,
+  ADD COLUMN IF NOT EXISTS linkedin text,
+  ADD COLUMN IF NOT EXISTS portfolio text;
+
+CREATE OR REPLACE FUNCTION increment_proof_score(user_id uuid, amount int)
+RETURNS void AS $$
+  UPDATE profiles SET proof_score = proof_score + amount WHERE id = user_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
 
 -- 1. Applicant count stored on the gig.
 --    Students can only see their own submissions under RLS, so counting
