@@ -3,58 +3,94 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-const ALLOWED = ["submitted", "shortlisted", "rejected", "selected"] as const;
+export type ReviewState = { error?: string; ok?: string } | null;
 
-export async function reviewSubmission(formData: FormData) {
+async function ownGig(gigId: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { supabase, gig: null };
+  const { data: gig } = await supabase
+    .from("gigs")
+    .select("id, status, deadline, max_applicants, applicant_count, reward_type, companies(owner_id)")
+    .eq("id", gigId)
+    .single();
+  const owner = (gig?.companies as unknown as { owner_id: string } | null)?.owner_id;
+  return { supabase, gig: owner === user.id ? gig : null };
+}
+
+/** Save the 1-10 rating and feedback for one submission. */
+export async function rateSubmission(_prev: ReviewState, formData: FormData): Promise<ReviewState> {
   const id = String(formData.get("id"));
   const gigId = String(formData.get("gig_id"));
-  const status = String(formData.get("status")) as (typeof ALLOWED)[number];
+  const rating = Number(formData.get("rating"));
   const feedback = String(formData.get("feedback") ?? "").trim() || null;
-  const ratingRaw = formData.get("rating");
-  const rating = ratingRaw ? Number(ratingRaw) : null;
 
-  if (!ALLOWED.includes(status)) return;
+  if (!Number.isInteger(rating) || rating < 1 || rating > 10) return { error: "Pick a rating from 1 to 10" };
 
-  const updateData: Record<string, unknown> = { status, feedback };
-  if (rating !== null && rating >= 1 && rating <= 5) {
-    updateData.rating = rating;
-  }
+  const { supabase, gig } = await ownGig(gigId);
+  if (!gig) return { error: "You can only review your own gigs" };
 
-  const { error } = await supabase.from("submissions").update(updateData).eq("id", id);
-  if (error) throw new Error(error.message);
-
-  // If selecting a winner, update proof scores for all submissions on this gig
-  if (status === "selected") {
-    // Get all submissions for this gig to update proof scores
-    const { data: allSubs } = await supabase
-      .from("submissions")
-      .select("id, student_id, status, rating")
-      .eq("gig_id", gigId);
-
-    if (allSubs) {
-      for (const sub of allSubs) {
-        let scoreIncrease = 0;
-        if (sub.id === id) {
-          // Selected winner gets base 100 + rating bonus
-          scoreIncrease = 100 + (rating ? rating * 20 : 0);
-        } else if (sub.rating) {
-          // Others get score based on their rating (10-50 points)
-          scoreIncrease = sub.rating * 10;
-        } else {
-          // Participated but no rating yet — base participation points
-          scoreIncrease = 10;
-        }
-
-        if (scoreIncrease > 0) {
-          await supabase.rpc("increment_proof_score", {
-            user_id: sub.student_id,
-            amount: scoreIncrease,
-          });
-        }
-      }
-    }
-  }
+  const { error } = await supabase
+    .from("submissions")
+    .update({ rating, feedback })
+    .eq("id", id)
+    .eq("gig_id", gigId);
+  if (error) return { error: error.message };
 
   revalidatePath(`/company/gigs/${gigId}/submissions`);
+  return { ok: "Rating saved" };
+}
+
+/**
+ * Pick the winning submission. Every applicant needs a rating first, so
+ * everyone gets something back for their work. The gig is closed and the
+ * other submissions are marked as not selected.
+ */
+export async function chooseWinner(gigId: string, submissionId: string): Promise<ReviewState> {
+  const { supabase, gig } = await ownGig(gigId);
+  if (!gig) return { error: "You can only review your own gigs" };
+
+  const stillOpen =
+    gig.status === "published" &&
+    (!gig.deadline || new Date(gig.deadline) > new Date()) &&
+    gig.applicant_count < gig.max_applicants;
+  if (stillOpen) return { error: "Close the gig or wait for the deadline before picking a winner" };
+
+  const { data: subs } = await supabase
+    .from("submissions")
+    .select("id, status, rating")
+    .eq("gig_id", gigId);
+  if (!subs?.some((s) => s.id === submissionId)) return { error: "Submission not found" };
+  if (subs.some((s) => s.status === "selected")) return { error: "You've already picked a winner for this gig" };
+  if (subs.some((s) => !s.rating)) return { error: "Rate every applicant out of 10 before picking a winner" };
+
+  const others = subs.filter((s) => s.id !== submissionId).map((s) => s.id);
+  if (others.length) {
+    const { error } = await supabase.from("submissions").update({ status: "rejected" }).in("id", others);
+    if (error) return { error: error.message };
+  }
+  const { error } = await supabase.from("submissions").update({ status: "selected" }).eq("id", submissionId);
+  if (error) return { error: error.message };
+
+  if (gig.status !== "closed") await supabase.from("gigs").update({ status: "closed" }).eq("id", gigId);
+
+  revalidatePath(`/company/gigs/${gigId}/submissions`);
+  return { ok: "Winner picked" };
+}
+
+/** No payment provider yet: the business marks the reward as sent. */
+export async function markPaid(gigId: string, submissionId: string): Promise<ReviewState> {
+  const { supabase, gig } = await ownGig(gigId);
+  if (!gig) return { error: "You can only review your own gigs" };
+
+  const { error } = await supabase
+    .from("submissions")
+    .update({ paid_at: new Date().toISOString() })
+    .eq("id", submissionId)
+    .eq("gig_id", gigId)
+    .eq("status", "selected");
+  if (error) return { error: error.message };
+
+  revalidatePath(`/company/gigs/${gigId}/submissions`);
+  return { ok: "Marked as paid" };
 }

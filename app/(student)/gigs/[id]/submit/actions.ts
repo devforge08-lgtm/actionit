@@ -15,19 +15,16 @@ export async function createSubmission(input: {
   if (input.filePaths.some((p) => !p.startsWith(prefix))) return { error: "Invalid file path" };
   if (input.links.some((l) => !/^https?:\/\//i.test(l))) return { error: "Invalid link" };
 
-  // Check if gig still has spots
+  // Quick check for a friendlier message; the database trigger is what
+  // actually holds the 3-applicant cap
   const { data: gig } = await supabase
     .from("gigs")
-    .select("max_applicants, status")
+    .select("max_applicants, applicant_count, status, deadline")
     .eq("id", input.gigId)
     .single();
-  if (!gig || gig.status !== "published") return { error: "This gig is no longer accepting submissions" };
-
-  const { count } = await supabase
-    .from("submissions")
-    .select("id", { count: "exact", head: true })
-    .eq("gig_id", input.gigId);
-  if ((count ?? 0) >= gig.max_applicants) return { error: "All spots for this gig have been filled" };
+  if (!gig || gig.status !== "published" || (gig.deadline && new Date(gig.deadline) <= new Date()))
+    return { error: "This gig is no longer accepting submissions" };
+  if (gig.applicant_count >= gig.max_applicants) return { error: "All spots for this gig have been filled" };
 
   const { error } = await supabase.from("submissions").insert({
     gig_id: input.gigId,
@@ -39,7 +36,9 @@ export async function createSubmission(input: {
 
   if (error) {
     if (error.code === "23505") return { error: "You've already submitted to this gig" };
-    if (error.code === "42501") return { error: "This gig isn't accepting submissions" };
+    if (error.message.includes("gig_full")) return { error: "All spots for this gig have been filled" };
+    if (error.message.includes("gig_closed") || error.code === "42501")
+      return { error: "This gig isn't accepting submissions" };
     return { error: error.message };
   }
   redirect("/submissions?sent=1");

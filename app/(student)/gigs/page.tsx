@@ -19,14 +19,17 @@ export const metadata = {
 
 export default async function GigBoard() {
   const supabase = await createClient();
-  const { data: gigs } = await supabase
+  const { data } = await supabase
     .from("gigs")
     .select(
-      "id, title, description, reward_type, reward_amount, deadline, is_remote, location, max_applicants, companies(name, verified), submissions(count)"
+      "id, title, description, reward_type, reward_amount, deadline, is_remote, location, max_applicants, applicant_count, companies(name, verified)"
     )
     .eq("status", "published")
+    .or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`)
     .order("published_at", { ascending: false })
     .limit(50);
+  // Full gigs are closed by the database, this just covers the moment in between
+  const gigs = data?.filter((g) => g.applicant_count < g.max_applicants);
 
   return (
     <div className="space-y-6">
@@ -97,8 +100,7 @@ export default async function GigBoard() {
                   <span className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     {(() => {
-                      const count = (g.submissions as unknown as { count: number }[])?.[0]?.count ?? 0;
-                      const left = g.max_applicants - count;
+                      const left = g.max_applicants - g.applicant_count;
                       return left <= 1
                         ? <span className="text-amber-400">{left} spot left</span>
                         : `${left} spots left`;

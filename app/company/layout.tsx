@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,6 +8,7 @@ import {
   PlusCircle,
   Briefcase,
   BarChart3,
+  Bell,
   LogOut,
   Menu,
   X,
@@ -20,6 +21,7 @@ const navItems = [
   { label: "Post a Gig", href: "/company/gigs/new", icon: PlusCircle },
   { label: "My Gigs", href: "/company/gigs", icon: Briefcase },
   { label: "Analytics", href: "/company/analytics", icon: BarChart3 },
+  { label: "Notifications", href: "/company/notifications", icon: Bell },
 ];
 
 export default function CompanyLayout({
@@ -31,6 +33,24 @@ export default function CompanyLayout({
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // Sends any due "no applicants" messages, then counts unread ones
+      await supabase.rpc("notify_unfilled_gigs");
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .is("read_at", null);
+      if (!cancelled) setUnread(count ?? 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -89,6 +109,11 @@ export default function CompanyLayout({
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
+                {item.href === "/company/notifications" && unread > 0 && (
+                  <span className="brand-num ml-auto min-w-5 h-5 px-1.5 rounded-full bg-green text-green-foreground text-[11px] flex items-center justify-center">
+                    {unread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -121,6 +146,16 @@ export default function CompanyLayout({
             <span className="font-semibold text-sm tracking-tight">
               ActionIT
             </span>
+          </Link>
+          <Link
+            href="/company/notifications"
+            aria-label="Notifications"
+            className="ml-auto relative p-1.5 rounded-md hover:bg-white/[0.04] transition-colors"
+          >
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            {unread > 0 && (
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-green" />
+            )}
           </Link>
         </header>
 

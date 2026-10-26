@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { reviewSubmission } from "./actions";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, FileText, ExternalLink, Paperclip, Star } from "lucide-react";
+import ReviewControls from "./review-controls";
+import { formatReward } from "@/lib/format";
+import { ArrowLeft, FileText, ExternalLink, Paperclip } from "lucide-react";
 
 export default async function ReviewPage({
   params,
@@ -20,7 +19,7 @@ export default async function ReviewPage({
 
   const { data: gig } = await supabase
     .from("gigs")
-    .select("id, title, max_applicants, companies(owner_id)")
+    .select("id, title, status, deadline, max_applicants, applicant_count, reward_type, reward_amount, companies(owner_id)")
     .eq("id", id)
     .single();
   if (!gig) notFound();
@@ -30,10 +29,18 @@ export default async function ReviewPage({
   const { data: subs } = await supabase
     .from("submissions")
     .select(
-      "id, note, links, file_paths, status, feedback, rating, created_at, profiles(full_name, username, college)"
+      "id, note, links, file_paths, status, feedback, rating, paid_at, created_at, profiles(full_name, username, college)"
     )
     .eq("gig_id", id)
     .order("created_at", { ascending: true });
+
+  const winner = subs?.find((s) => s.status === "selected");
+  const acceptingWork =
+    gig.status === "published" &&
+    (!gig.deadline || new Date(gig.deadline) > new Date()) &&
+    gig.applicant_count < gig.max_applicants;
+  const unrated = subs?.filter((s) => !s.rating).length ?? 0;
+  const canPickWinner = !winner && !acceptingWork && unrated === 0;
 
   // signed download links for files
   const allPaths = subs?.flatMap((s) => s.file_paths) ?? [];
@@ -62,6 +69,29 @@ export default async function ReviewPage({
           {gig.title} · {subs?.length ?? 0} / {gig.max_applicants} applicants
         </p>
       </div>
+
+      {!!subs?.length && (
+        <div className="rounded-2xl border border-green/15 bg-green/[0.04] p-4 text-sm">
+          {winner ? (
+            <span>
+              Winner picked.{" "}
+              {winner.paid_at
+                ? "Payment is marked as sent."
+                : `Send them ${formatReward(gig.reward_type, gig.reward_amount)} and mark it as paid below.`}
+            </span>
+          ) : acceptingWork ? (
+            <span className="text-muted-foreground">
+              Students can still apply. Once all spots fill or the deadline passes, rate everyone out of 10 and pick the work you're happiest with.
+            </span>
+          ) : unrated > 0 ? (
+            <span className="text-muted-foreground">
+              Rate every applicant out of 10 ({unrated} left), then pick the work you're happiest with. Ratings help every student build their Proof Score.
+            </span>
+          ) : (
+            <span>All rated. Pick the winner and they get paid.</span>
+          )}
+        </div>
+      )}
 
       {!subs?.length ? (
         <div className="text-center py-16 space-y-3">
@@ -96,13 +126,13 @@ export default async function ReviewPage({
                       s.status === "selected"
                         ? "bg-green/10 text-green"
                         : s.status === "rejected"
-                        ? "bg-red-400/10 text-red-400"
+                        ? "bg-muted text-muted-foreground"
                         : s.status === "shortlisted"
                         ? "bg-amber-400/10 text-amber-400"
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {s.status}
+                    {s.status === "selected" ? (s.paid_at ? "winner · paid" : "winner") : s.status === "rejected" ? "not selected" : s.status}
                   </span>
                 </div>
 
@@ -147,59 +177,17 @@ export default async function ReviewPage({
                   </ul>
                 )}
 
-                <form
-                  action={reviewSubmission}
-                  className="space-y-3 border-t border-white/[0.06] pt-4"
-                >
-                  <input type="hidden" name="id" value={s.id} />
-                  <input type="hidden" name="gig_id" value={id} />
-                  <Textarea
-                    name="feedback"
-                    rows={2}
-                    defaultValue={s.feedback ?? ""}
-                    placeholder="Feedback for the student (they'll see this)"
-                    className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
-                  />
-                  <div className="space-y-2">
-                    <label className="text-xs text-muted-foreground">Rate this submission (1-5)</label>
-                    <div className="flex gap-1">
-                      {[1, 2, 3, 4, 5].map((v) => (
-                        <label key={v} className="cursor-pointer">
-                          <input type="radio" name="rating" value={v} defaultChecked={s.rating === v} className="sr-only peer" />
-                          <Star className="h-5 w-5 text-muted-foreground/30 peer-checked:text-amber-400 peer-checked:fill-amber-400 hover:text-amber-400/60 transition-colors" />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <Button
-                      name="status"
-                      value="shortlisted"
-                      size="sm"
-                      variant="outline"
-                      className="border-amber-400/20 text-amber-400 hover:bg-amber-400/10"
-                    >
-                      Shortlist
-                    </Button>
-                    <Button
-                      name="status"
-                      value="selected"
-                      size="sm"
-                      className="bg-green text-green-foreground hover:bg-green/90"
-                    >
-                      Select
-                    </Button>
-                    <Button
-                      name="status"
-                      value="rejected"
-                      size="sm"
-                      variant="outline"
-                      className="border-red-400/20 text-red-400 hover:bg-red-400/10"
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </form>
+                <ReviewControls
+                  gigId={id}
+                  submissionId={s.id}
+                  rating={s.rating}
+                  feedback={s.feedback}
+                  isWinner={s.status === "selected"}
+                  paid={!!s.paid_at}
+                  rewardIsPaid={gig.reward_type === "paid"}
+                  winnerPicked={!!winner}
+                  canPickWinner={canPickWinner}
+                />
               </div>
             );
           })}

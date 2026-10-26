@@ -26,21 +26,15 @@ export default async function SubmitPage({
 
   const { data: gig } = await supabase
     .from("gigs")
-    .select("id, title, deliverables, status, deadline, max_applicants")
+    .select("id, title, deliverables, status, deadline, max_applicants, applicant_count")
     .eq("id", id)
     .single();
   if (!gig) notFound();
 
-  // Check slots
-  const { count: subCount } = await supabase
-    .from("submissions")
-    .select("id", { count: "exact", head: true })
-    .eq("gig_id", id);
-
   const open =
     gig.status === "published" &&
     (!gig.deadline || new Date(gig.deadline) > new Date()) &&
-    (subCount ?? 0) < gig.max_applicants;
+    gig.applicant_count < gig.max_applicants;
   if (!open) redirect(`/gigs/${id}`);
 
   const { data: existing } = await supabase

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { withdrawSubmission } from "../gigs/[id]/submit/actions";
+import { Num } from "@/components/brand/primitives";
 import {
   FileText,
   ExternalLink,
@@ -12,7 +13,12 @@ const STATUS_STYLE: Record<string, string> = {
   submitted: "text-blue-400 bg-blue-400/10",
   shortlisted: "text-amber-400 bg-amber-400/10",
   selected: "text-green bg-green/10",
-  rejected: "text-red-400 bg-red-400/10",
+  rejected: "text-muted-foreground bg-muted",
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  selected: "winner",
+  rejected: "not selected",
 };
 
 export default async function MySubmissions({
@@ -28,7 +34,7 @@ export default async function MySubmissions({
   const { data: subs } = await supabase
     .from("submissions")
     .select(
-      "id, status, feedback, created_at, gigs(id, title, companies(name))"
+      "id, status, feedback, rating, paid_at, created_at, gigs(id, title, reward_type, companies(name))"
     )
     .eq("student_id", user.id)
     .order("created_at", { ascending: false });
@@ -80,6 +86,7 @@ export default async function MySubmissions({
             const gig = s.gigs as unknown as {
               id: string;
               title: string;
+              reward_type: string;
               companies: { name: string } | null;
             };
             return (
@@ -105,9 +112,24 @@ export default async function MySubmissions({
                       "text-muted-foreground bg-muted"
                     }`}
                   >
-                    {s.status}
+                    {STATUS_LABEL[s.status] ?? s.status}
                   </span>
                 </div>
+
+                {(s.rating || s.status === "selected") && (
+                  <div className="flex items-center gap-4 text-sm">
+                    {s.rating && (
+                      <span className="text-muted-foreground">
+                        Rated <Num className="text-green font-semibold">{s.rating}/10</Num>
+                      </span>
+                    )}
+                    {s.status === "selected" && gig.reward_type === "paid" && (
+                      <span className={s.paid_at ? "text-green" : "text-muted-foreground"}>
+                        {s.paid_at ? "Paid" : "Payment on the way"}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {s.feedback && (
                   <div className="text-sm rounded-xl bg-green/5 border border-green/10 p-3">

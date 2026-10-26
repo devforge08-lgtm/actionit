@@ -42,7 +42,7 @@ export default async function GigPage({
 
   const { data: gig } = await supabase
     .from("gigs")
-    .select("*, companies(name, verified, website, owner_id), submissions(count)")
+    .select("*, companies(name, verified, website, owner_id)")
     .eq("id", id)
     .single();
   if (!gig) notFound();
@@ -76,8 +76,7 @@ export default async function GigPage({
       alreadySubmitted = !!s;
     }
   }
-  const submissionCount = (gig.submissions as unknown as { count: number }[])?.[0]?.count ?? 0;
-  const slotsLeft = gig.max_applicants - submissionCount;
+  const slotsLeft = gig.max_applicants - gig.applicant_count;
   const isOwner = user?.id === company.owner_id;
   const open =
     gig.status === "published" &&
