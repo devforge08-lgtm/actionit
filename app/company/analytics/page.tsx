@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
   Briefcase,
   Users,
@@ -95,11 +96,14 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Analytics
-        </h1>
-        <p className="text-muted-foreground mt-1">{company.name}</p>
+      <div className="space-y-4">
+        <SectionLabel index="02">Analytics</SectionLabel>
+        <div>
+          <h1 className="brand-display text-3xl sm:text-4xl">Your numbers</h1>
+          <p className="brand-eyebrow text-muted-foreground mt-2">
+            {company.name}
+          </p>
+        </div>
       </div>
 
       {allGigs.length === 0 ? (
@@ -160,7 +164,7 @@ export default async function AnalyticsPage() {
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+                  <Num className="block text-3xl font-semibold">{stat.value}</Num>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
                   <p className="text-xs text-muted-foreground/60 mt-0.5">
                     {stat.sub}
@@ -207,7 +211,7 @@ export default async function AnalyticsPage() {
                 <Star className="h-4 w-4 text-amber-400" />
                 <h3 className="font-semibold">Selection Rate</h3>
               </div>
-              <p className="text-3xl font-bold">{selectionRate}%</p>
+              <Num className="block text-3xl font-semibold">{selectionRate}%</Num>
               <p className="text-sm text-muted-foreground">
                 {selectedSubs.length} students selected out of {allSubs.length}{" "}
                 applications
@@ -219,11 +223,11 @@ export default async function AnalyticsPage() {
                 <Clock className="h-4 w-4 text-blue-400" />
                 <h3 className="font-semibold">Avg per Gig</h3>
               </div>
-              <p className="text-3xl font-bold">
+              <Num className="block text-3xl font-semibold">
                 {allGigs.length > 0
                   ? (allSubs.length / allGigs.length).toFixed(1)
                   : "0"}
-              </p>
+              </Num>
               <p className="text-sm text-muted-foreground">
                 Applications per gig on average
               </p>

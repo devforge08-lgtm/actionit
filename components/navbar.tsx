@@ -35,13 +35,16 @@ export default function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-[#050806]/90 backdrop-blur-md border-b border-white/[0.06]"
+          ? "bg-[#050806]/80 backdrop-blur-xl border-b border-white/[0.06] shadow-[0_1px_30px_rgba(123,196,127,0.05)]"
           : "bg-transparent"
       }`}
     >
       <nav className="max-w-6xl mx-auto flex items-center justify-between px-5 py-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-green inline-block" />
+        <Link href="/" className="group flex items-center gap-2.5">
+          <span className="relative inline-flex h-3 w-3 items-center justify-center">
+            <span className="absolute inset-0 rounded-full bg-green/30 blur-[6px] transition-all duration-500 group-hover:bg-green/60" />
+            <span className="relative h-2 w-2 rounded-full bg-green" />
+          </span>
           <span className="text-lg font-semibold tracking-tight text-foreground">
             ActionIT
           </span>
@@ -54,7 +57,7 @@ export default function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted-foreground hover:text-green transition-colors"
+                className="brand-eyebrow relative text-muted-foreground transition-colors hover:text-green after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-green after:transition-all after:duration-300 hover:after:w-full"
               >
                 {link.label}
               </a>
@@ -112,7 +115,7 @@ export default function Navbar() {
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="block text-sm text-muted-foreground hover:text-green transition-colors py-2"
+              className="brand-eyebrow block py-2 text-muted-foreground transition-colors hover:text-green"
             >
               {link.label}
             </a>

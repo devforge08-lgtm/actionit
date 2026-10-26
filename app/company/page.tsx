@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
   Briefcase,
   Users,
@@ -63,11 +64,16 @@ export default async function CompanyDashboard() {
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Hey, {profile.full_name?.split(" ")[0] ?? "there"} 👋
-        </h1>
-        <p className="text-muted-foreground mt-1">{company.name}</p>
+      <div className="space-y-4">
+        <SectionLabel index="01">Company dashboard</SectionLabel>
+        <div>
+          <h1 className="brand-display text-3xl sm:text-4xl">
+            Hey, {profile.full_name?.split(" ")[0] ?? "there"}
+          </h1>
+          <p className="brand-eyebrow text-muted-foreground mt-2">
+            {company.name}
+          </p>
+        </div>
       </div>
 
       {hasGigs ? (
@@ -79,43 +85,37 @@ export default async function CompanyDashboard() {
                 label: "Active Gigs",
                 value: activeGigs.length,
                 icon: Briefcase,
-                color: "text-green",
-                bg: "bg-green/10",
               },
               {
                 label: "Applications",
                 value: totalApplications,
                 icon: Users,
-                color: "text-blue-400",
-                bg: "bg-blue-400/10",
               },
               {
                 label: "Completed",
                 value: completedGigs.length,
                 icon: CheckCircle2,
-                color: "text-emerald-400",
-                bg: "bg-emerald-400/10",
               },
               {
                 label: "Total Spent",
                 value: `₹${totalSpent.toLocaleString("en-IN")}`,
                 icon: IndianRupee,
-                color: "text-amber-400",
-                bg: "bg-amber-400/10",
               },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-transparent p-5 space-y-3"
+                className="brand-panel rounded-2xl p-5 space-y-3 transition-all duration-500 hover:border-green/20 hover:shadow-[0_0_40px_rgba(123,196,127,0.07)]"
               >
-                <div
-                  className={`h-9 w-9 rounded-lg ${stat.bg} flex items-center justify-center`}
-                >
-                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                <div className="h-9 w-9 rounded-lg bg-green/10 flex items-center justify-center">
+                  <stat.icon className="h-4 w-4 text-green" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                <div className="space-y-1">
+                  <Num className="block text-3xl font-semibold">
+                    {stat.value}
+                  </Num>
+                  <p className="brand-eyebrow text-muted-foreground">
+                    {stat.label}
+                  </p>
                 </div>
               </div>
             ))}

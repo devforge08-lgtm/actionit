@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
+import ShaderField from "@/components/brand/shader-field";
+import {
+  Marquee,
+  Num,
+  ProofRing,
+  SectionLabel,
+} from "@/components/brand/primitives";
 import {
   ArrowRight,
   Briefcase,
@@ -15,114 +22,7 @@ import {
   Shield,
   Users,
   CheckCircle2,
-  MousePointer2,
 } from "lucide-react";
-
-/* ─────────────────────────────────────────────────────────────────
-   Living Canvas — interactive orb that follows cursor
-   ───────────────────────────────────────────────────────────────── */
-function LivingCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouse = useRef({ x: 0.5, y: 0.5 });
-  const frame = useRef(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    let animId: number;
-
-    function resize() {
-      canvas!.width = window.innerWidth;
-      canvas!.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener("resize", resize);
-
-    function onMove(e: MouseEvent) {
-      mouse.current.x = e.clientX / window.innerWidth;
-      mouse.current.y = e.clientY / window.innerHeight;
-    }
-    window.addEventListener("mousemove", onMove);
-
-    function draw() {
-      const w = canvas!.width;
-      const h = canvas!.height;
-      ctx.clearRect(0, 0, w, h);
-      frame.current++;
-
-      const t = frame.current * 0.008;
-      const mx = mouse.current.x;
-      const my = mouse.current.y;
-
-      // Main orb — follows mouse with lag
-      const cx = w * (0.5 + (mx - 0.5) * 0.3);
-      const cy = h * (0.35 + (my - 0.5) * 0.15);
-      const baseR = Math.min(w, h) * 0.18;
-      const breathe = Math.sin(t * 1.2) * 0.06 + 1;
-      const r = baseR * breathe;
-
-      // Outer glow
-      const outerGlow = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 2.5);
-      outerGlow.addColorStop(0, "rgba(123, 196, 127, 0.08)");
-      outerGlow.addColorStop(0.4, "rgba(123, 196, 127, 0.03)");
-      outerGlow.addColorStop(1, "transparent");
-      ctx.fillStyle = outerGlow;
-      ctx.fillRect(0, 0, w, h);
-
-      // Core orb
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      grad.addColorStop(0, "rgba(123, 196, 127, 0.15)");
-      grad.addColorStop(0.5, "rgba(123, 196, 127, 0.06)");
-      grad.addColorStop(1, "rgba(123, 196, 127, 0)");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Inner bright core
-      const innerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 0.4);
-      innerGrad.addColorStop(0, "rgba(123, 196, 127, 0.25)");
-      innerGrad.addColorStop(1, "rgba(123, 196, 127, 0)");
-      ctx.fillStyle = innerGrad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Floating particles
-      for (let i = 0; i < 40; i++) {
-        const angle = (i / 40) * Math.PI * 2 + t * (0.3 + (i % 3) * 0.1);
-        const dist = r * (0.6 + Math.sin(t * 2 + i) * 0.8 + (i % 5) * 0.15);
-        const px = cx + Math.cos(angle) * dist;
-        const py = cy + Math.sin(angle) * dist;
-        const pSize = 1 + Math.sin(t * 3 + i * 0.7) * 0.8;
-        const alpha = 0.15 + Math.sin(t * 2 + i) * 0.1;
-
-        ctx.fillStyle = `rgba(123, 196, 127, ${alpha})`;
-        ctx.beginPath();
-        ctx.arc(px, py, pSize, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      animId = requestAnimationFrame(draw);
-    }
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMove);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{ zIndex: 0 }}
-    />
-  );
-}
 
 /* ─────────────────────────────────────────────────────────────────
    Scroll-reveal hook
@@ -300,14 +200,22 @@ function Counter({ value, suffix = "" }: { value: number; suffix?: string }) {
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      <LivingCanvas />
+      <ShaderField />
 
-      <div className="relative z-10 text-center px-5 space-y-8 max-w-3xl mx-auto">
+      <div className="relative z-10 text-center px-5 space-y-8 max-w-4xl mx-auto">
         <Reveal>
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight">
+          <p className="brand-eyebrow text-green/80 flex items-center justify-center gap-3">
+            <span className="h-px w-8 bg-green/40" />
+            Micro-gigs for college students
+            <span className="h-px w-8 bg-green/40" />
+          </p>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <h1 className="brand-display text-[clamp(3rem,13vw,8.5rem)]">
             Small work.
             <br />
-            <span className="bg-gradient-to-r from-green via-emerald-400 to-green bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-green via-emerald-300 to-green bg-clip-text text-transparent">
               Real proof.
             </span>
           </h1>
@@ -357,7 +265,7 @@ function Hero() {
 function StatsBar() {
   return (
     <section className="py-16 px-5 flex justify-center">
-      <div className="w-fit rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl shadow-[0_0_40px_rgba(123,196,127,0.04)] px-10 sm:px-16 py-8">
+      <div className="brand-panel w-fit rounded-2xl backdrop-blur-xl shadow-[0_0_40px_rgba(123,196,127,0.04)] px-10 sm:px-16 py-8">
         <div className="flex flex-col sm:flex-row items-center gap-10 sm:gap-16 text-center">
           {[
             { value: 100, suffix: "+", label: "Gig Types", note: "Design to code to data" },
@@ -366,10 +274,12 @@ function StatsBar() {
           ].map((s, i) => (
             <Reveal key={s.label} delay={i * 0.1}>
               <div className="space-y-1">
-                <p className="text-3xl sm:text-4xl font-bold text-green">
-                  <Counter value={s.value} suffix={s.suffix} />
+                <p className="text-4xl sm:text-5xl font-semibold text-green">
+                  <Num>
+                    <Counter value={s.value} suffix={s.suffix} />
+                  </Num>
                 </p>
-                <p className="text-sm font-medium">{s.label}</p>
+                <p className="brand-eyebrow">{s.label}</p>
                 <p className="text-xs text-muted-foreground">{s.note}</p>
               </div>
             </Reveal>
@@ -406,11 +316,14 @@ function WhatIs() {
     <section id="for-students" className="py-24 px-5">
       <div className="max-w-5xl mx-auto space-y-16">
         <Reveal>
-          <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <div className="max-w-2xl mx-auto space-y-5 text-center">
+            <SectionLabel index="01" className="text-left">
+              What it is
+            </SectionLabel>
+            <h2 className="brand-display text-4xl sm:text-5xl lg:text-6xl text-left">
               What is ActionIT?
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg leading-relaxed text-left">
               A platform where college students take on real micro-gigs,
               earn real money, and build a portfolio backed by a verifiable
               Proof Score.
@@ -473,10 +386,12 @@ function HowItWorks() {
     <section id="how-it-works" className="py-24 px-5">
       <div className="max-w-5xl mx-auto space-y-12">
         <Reveal>
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-              How it works
-            </h2>
+          <div className="space-y-5">
+            <SectionLabel index="02">The loop</SectionLabel>
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+              <h2 className="brand-display text-4xl sm:text-5xl lg:text-6xl">
+                How it works
+              </h2>
             <div className="flex rounded-2xl bg-white/[0.03] p-1.5 text-sm w-fit border border-white/[0.06]">
               {(["student", "business"] as const).map((t) => (
                 <button
@@ -496,6 +411,7 @@ function HowItWorks() {
                   {t === "student" ? "Students" : "Businesses"}
                 </button>
               ))}
+              </div>
             </div>
           </div>
         </Reveal>
@@ -514,13 +430,13 @@ function HowItWorks() {
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <span
-                    className={`text-2xl font-bold transition-colors duration-500 ${
+                  <Num
+                    className={`text-2xl font-semibold transition-colors duration-500 ${
                       activeStep === i ? "text-green" : "text-white/10"
                     }`}
                   >
                     {step.num}
-                  </span>
+                  </Num>
                   <div>
                     <h3 className="font-semibold">{step.title}</h3>
                     <p
@@ -555,13 +471,14 @@ function HowItWorks() {
               <div className="absolute -top-12 -right-12 w-40 h-40 bg-green/[0.08] rounded-full blur-[60px] pointer-events-none" />
               <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-emerald-500/[0.05] rounded-full blur-[50px] pointer-events-none" />
 
-              <div className="relative flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green/25 to-emerald-900/20 flex items-center justify-center shadow-[0_0_20px_rgba(123,196,127,0.15)]">
-                  <Award className="h-7 w-7 text-green" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Proof Score</p>
-                  <p className="text-3xl font-bold text-green">742</p>
+              <div className="relative flex items-center gap-5">
+                <ProofRing value={742} />
+                <div className="space-y-1">
+                  <p className="brand-eyebrow text-muted-foreground">Tier</p>
+                  <p className="brand-display text-2xl text-green">Proven</p>
+                  <p className="text-xs text-muted-foreground">
+                    Verified from 23 completed gigs
+                  </p>
                 </div>
               </div>
 
@@ -569,7 +486,7 @@ function HowItWorks() {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Progress to Elite</span>
-                    <span className="text-green font-medium">74%</span>
+                    <Num className="text-green font-medium">74%</Num>
                   </div>
                   <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
                     <div className="h-full w-[74%] rounded-full bg-gradient-to-r from-green/70 to-green shadow-[0_0_10px_rgba(123,196,127,0.3)]" />
@@ -583,8 +500,10 @@ function HowItWorks() {
                   { label: "This month", value: "+48 pts", color: "text-emerald-400" },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">{row.label}</span>
-                    <span className={`font-medium ${row.color}`}>{row.value}</span>
+                    <span className="brand-eyebrow text-muted-foreground">
+                      {row.label}
+                    </span>
+                    <Num className={`font-medium ${row.color}`}>{row.value}</Num>
                   </div>
                 ))}
               </div>
@@ -660,11 +579,14 @@ function ProofScore() {
     <section id="proof-score" className="py-24 px-5">
       <div className="max-w-5xl mx-auto space-y-16">
         <Reveal>
-          <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <div className="max-w-2xl mx-auto space-y-5 text-center">
+            <SectionLabel index="03" className="text-left">
+              The score
+            </SectionLabel>
+            <h2 className="brand-display text-4xl sm:text-5xl lg:text-6xl text-left">
               Proof Score
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg leading-relaxed text-left">
               A single number that captures your reliability, skill, and
               track record \u2014 built from real completed work, not
               self-reported claims. Click a tier to explore.
@@ -691,7 +613,9 @@ function ProofScore() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg">{tier.name}</h3>
-                    <p className={`text-sm font-medium ${tier.color}`}>{tier.range}</p>
+                    <Num className={`text-sm font-medium ${tier.color}`}>
+                      {tier.range}
+                    </Num>
                   </div>
                   <p className="text-muted-foreground text-xs leading-relaxed">
                     {tier.name === "Starter" && "Just getting started. Complete your first gigs to begin climbing."}
@@ -731,9 +655,9 @@ function ProofScore() {
                     <div className="space-y-2 flex-1">
                       <div className="flex items-baseline gap-3">
                         <h3 className="text-xl font-bold">{tiers[activeTier].name}</h3>
-                        <span className={`text-sm font-medium ${tiers[activeTier].color}`}>
+                        <Num className={`text-sm font-medium ${tiers[activeTier].color}`}>
                           {tiers[activeTier].range} pts
-                        </span>
+                        </Num>
                       </div>
                       <p className="text-muted-foreground text-sm max-w-lg">
                         Here&apos;s what you unlock at the {tiers[activeTier].name} tier:
@@ -780,11 +704,14 @@ function ForBusinesses() {
     <section id="for-businesses" className="py-24 px-5">
       <div className="max-w-5xl mx-auto space-y-16">
         <Reveal>
-          <div className="max-w-2xl mx-auto text-center space-y-4">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <div className="max-w-2xl mx-auto space-y-5 text-center">
+            <SectionLabel index="04" className="text-left">
+              For businesses
+            </SectionLabel>
+            <h2 className="brand-display text-4xl sm:text-5xl lg:text-6xl text-left">
               For businesses
             </h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">
+            <p className="text-muted-foreground text-lg leading-relaxed text-left">
               Get real work done by motivated students with verified skills.
               Hiring for small tasks, as simple as posting a tweet.
             </p>
@@ -841,9 +768,12 @@ function FAQ() {
     <section className="py-24 px-5">
       <div className="max-w-3xl mx-auto space-y-10">
         <Reveal>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-center">
-            Questions? Answered.
-          </h2>
+          <div className="space-y-5">
+            <SectionLabel index="05">FAQ</SectionLabel>
+            <h2 className="brand-display text-4xl sm:text-5xl">
+              Questions? Answered.
+            </h2>
+          </div>
         </Reveal>
 
         <div className="space-y-3">
@@ -900,7 +830,7 @@ function FooterCTA() {
             <div className="absolute bottom-0 right-1/4 w-[300px] h-[200px] bg-emerald-500/[0.05] rounded-full blur-[80px]" />
           </div>
 
-          <h2 className="relative text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="relative brand-display text-4xl sm:text-6xl">
             Ready to prove yourself?
           </h2>
           <p className="relative text-muted-foreground text-lg max-w-lg mx-auto">
@@ -966,6 +896,17 @@ export default function HomePage() {
       `}</style>
       <main className="overflow-x-hidden">
         <Hero />
+        <Marquee
+          items={[
+            "Poster design \u20b9400",
+            "Reels editing \u20b9750",
+            "Landing page copy \u20b9900",
+            "Data cleanup \u20b9500",
+            "0% commission under \u20b91,000",
+            "Max 3 applicants per gig",
+            "Proof Score 0 \u2013 1000",
+          ]}
+        />
         <StatsBar />
         <WhatIs />
         <HowItWorks />

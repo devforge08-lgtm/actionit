@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
   IndianRupee,
   CheckCircle2,
@@ -120,7 +121,10 @@ export default async function StudentAnalytics() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Analytics</h1>
+      <div className="space-y-4">
+        <SectionLabel index="02">Analytics</SectionLabel>
+        <h1 className="brand-display text-3xl sm:text-4xl">Your numbers</h1>
+      </div>
 
       {/* Key metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -171,7 +175,7 @@ export default async function StudentAnalytics() {
               <div className={`inline-flex p-2 rounded-xl ${m.bg}`}>
                 <m.icon className={`h-4 w-4 ${m.color}`} />
               </div>
-              <p className="text-2xl font-semibold mt-2">{m.value}</p>
+              <Num className="block text-3xl font-semibold mt-2">{m.value}</Num>
               <p className="text-xs text-muted-foreground">{m.label}</p>
               <p className="text-xs text-muted-foreground/70 mt-0.5">{m.sub}</p>
             </div>

@@ -14,6 +14,7 @@ import {
   Target,
 } from "lucide-react";
 import DeadlineReminder from "./deadline-reminder";
+import { Num, SectionLabel } from "@/components/brand/primitives";
 
 export default async function StudentDashboard() {
   const supabase = await createClient();
@@ -77,33 +78,21 @@ export default async function StudentDashboard() {
       label: "Active Gigs",
       value: activeSubs.length,
       icon: Briefcase,
-      gradient: "from-green/20 to-emerald-900/20",
-      iconBg: "bg-green/15",
-      iconColor: "text-green",
     },
     {
       label: "Completed",
       value: selectedSubs.length,
       icon: CheckCircle2,
-      gradient: "from-emerald-500/20 to-teal-900/20",
-      iconBg: "bg-emerald-400/15",
-      iconColor: "text-emerald-400",
     },
     {
       label: "Total Earned",
       value: `₹${totalEarned.toLocaleString("en-IN")}`,
       icon: IndianRupee,
-      gradient: "from-amber-500/20 to-orange-900/20",
-      iconBg: "bg-amber-400/15",
-      iconColor: "text-amber-400",
     },
     {
       label: "Submissions",
       value: totalSubmissions,
       icon: Target,
-      gradient: "from-blue-500/20 to-indigo-900/20",
-      iconBg: "bg-blue-400/15",
-      iconColor: "text-blue-400",
     },
   ];
 
@@ -115,13 +104,16 @@ export default async function StudentDashboard() {
 
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold">
-            Hey {profile.full_name?.split(" ")[0]} 👋
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            @{profile.username} · Student
-          </p>
+        <div className="space-y-4">
+          <SectionLabel index="01">Dashboard</SectionLabel>
+          <div>
+            <h1 className="brand-display text-3xl sm:text-4xl">
+              Hey {profile.full_name?.split(" ")[0]}
+            </h1>
+            <p className="brand-eyebrow text-muted-foreground mt-2">
+              @{profile.username} · Student
+            </p>
+          </div>
         </div>
 
         {/* Stats grid */}
@@ -129,17 +121,17 @@ export default async function StudentDashboard() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className={`relative overflow-hidden rounded-2xl border border-white/[0.06] p-4 space-y-2 bg-gradient-to-br ${stat.gradient}`}
+              className="brand-panel group relative overflow-hidden rounded-2xl p-4 transition-all duration-500 hover:border-green/20 hover:shadow-[0_0_40px_rgba(123,196,127,0.07)]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,196,127,0.04),transparent_70%)]" />
-              <div className="relative">
-                <div
-                  className={`inline-flex p-2 rounded-xl ${stat.iconBg}`}
-                >
-                  <stat.icon className={`h-4 w-4 ${stat.iconColor}`} />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,196,127,0.06),transparent_70%)]" />
+              <div className="relative space-y-2">
+                <div className="inline-flex rounded-xl bg-green/10 p-2">
+                  <stat.icon className="h-4 w-4 text-green" />
                 </div>
-                <p className="text-2xl font-semibold mt-2">{stat.value}</p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <Num className="block text-3xl font-semibold">{stat.value}</Num>
+                <p className="brand-eyebrow text-muted-foreground">
+                  {stat.label}
+                </p>
               </div>
             </div>
           ))}

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatReward, formatDeadline } from "@/lib/format";
+import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
   MapPin,
   Clock,
@@ -30,7 +31,10 @@ export default async function GigBoard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Open Gigs</h1>
+        <div className="space-y-4">
+        <SectionLabel index="01">Browse</SectionLabel>
+        <h1 className="brand-display text-3xl sm:text-4xl">Open gigs</h1>
+      </div>
         <p className="text-sm text-muted-foreground mt-1">
           Do real work. Build proof. Get noticed.
         </p>
@@ -71,7 +75,7 @@ export default async function GigBoard() {
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-green whitespace-nowrap">
-                    {formatReward(g.reward_type, g.reward_amount)}
+                    <Num>{formatReward(g.reward_type, g.reward_amount)}</Num>
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
