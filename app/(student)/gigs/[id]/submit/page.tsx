@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import SubmitForm from "./submit-form";
 import { ArrowLeft } from "lucide-react";
 
@@ -12,9 +12,7 @@ export default async function SubmitPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect(`/login?next=/gigs/${id}/submit`);
 
   const { data: profile } = await supabase

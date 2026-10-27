@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { formatReward } from "@/lib/format";
 import {
   Briefcase,
@@ -19,33 +19,33 @@ import { nextTierProgress, tierInfo } from "@/lib/proof-score";
 
 export default async function StudentDashboard() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, full_name, username, proof_score, proof_tier, proof_gigs, proof_wins, proof_rating")
-    .eq("id", user.id)
-    .single();
+  // Fetch everything at once instead of one query after another
+  const [{ data: profile }, { data: submissions }, { data: points }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("role, full_name, username, proof_score, proof_tier, proof_gigs, proof_wins, proof_rating")
+        .eq("id", user.id)
+        .single(),
+      supabase
+        .from("submissions")
+        .select(
+          "id, status, created_at, gigs(id, title, deadline, reward_type, reward_amount, status, companies(name))"
+        )
+        .eq("student_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("proof_points")
+        .select("id, gig_title, company_name, rating, won, points, created_at")
+        .eq("student_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ]);
   if (!profile?.role) redirect("/onboarding");
   if (profile.role === "company") redirect("/company");
-
-  const { data: submissions } = await supabase
-    .from("submissions")
-    .select(
-      "id, status, created_at, gigs(id, title, deadline, reward_type, reward_amount, status, companies(name))"
-    )
-    .eq("student_id", user.id)
-    .order("created_at", { ascending: false });
-
-  const { data: points } = await supabase
-    .from("proof_points")
-    .select("id, gig_title, company_name, rating, won, points, created_at")
-    .eq("student_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(6);
 
   const tier = tierInfo(profile.proof_tier);
   const progress = nextTierProgress(profile.proof_tier, {

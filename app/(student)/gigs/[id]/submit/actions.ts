@@ -1,13 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 
 export async function createSubmission(input: {
   gigId: string; note: string; links: string[]; filePaths: string[];
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) return { error: "Please log in again" };
 
   // only accept file paths inside this student's folder for this gig
@@ -49,7 +49,7 @@ export async function submitRevision(input: {
   submissionId: string; gigId: string; note: string; links: string[]; filePaths: string[];
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) return { error: "Please log in again" };
 
   const prefix = `${user.id}/${input.gigId}/`;

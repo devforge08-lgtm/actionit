@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { formatReward, formatDeadline } from "@/lib/format";
 import {
   ArrowLeft,
@@ -53,28 +53,22 @@ export default async function GigPage({
     website: string | null;
     owner_id: string;
   };
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   let role: string | null = null;
   let alreadySubmitted = false;
   if (user) {
-    const { data: p } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    role = p?.role ?? null;
-    if (role === "student") {
-      const { data: s } = await supabase
+    const [{ data: p }, { data: s }] = await Promise.all([
+      supabase.from("profiles").select("role").eq("id", user.id).single(),
+      supabase
         .from("submissions")
         .select("id")
         .eq("gig_id", id)
         .eq("student_id", user.id)
-        .maybeSingle();
-      alreadySubmitted = !!s;
-    }
+        .maybeSingle(),
+    ]);
+    role = p?.role ?? null;
+    alreadySubmitted = role === "student" && !!s;
   }
   const slotsLeft = gig.max_applicants - gig.applicant_count;
   const isOwner = user?.id === company.owner_id;

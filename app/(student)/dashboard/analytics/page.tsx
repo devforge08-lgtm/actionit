@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
   IndianRupee,
@@ -14,26 +14,21 @@ import {
 
 export default async function StudentAnalytics() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: submissions }] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", user.id).single(),
+    supabase
+      .from("submissions")
+      .select(
+        "id, status, created_at, gigs(id, title, deadline, reward_type, reward_amount, companies(name), created_at)"
+      )
+      .eq("student_id", user.id)
+      .order("created_at", { ascending: false }),
+  ]);
   if (!profile?.role) redirect("/onboarding");
   if (profile.role === "company") redirect("/company");
-
-  const { data: submissions } = await supabase
-    .from("submissions")
-    .select(
-      "id, status, created_at, gigs(id, title, deadline, reward_type, reward_amount, companies(name), created_at)"
-    )
-    .eq("student_id", user.id)
-    .order("created_at", { ascending: false });
 
   const subs = submissions ?? [];
   const selectedSubs = subs.filter((s) => s.status === "selected");

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { withdrawSubmission } from "../gigs/[id]/submit/actions";
 import { Num } from "@/components/brand/primitives";
 import {
@@ -26,9 +26,7 @@ export default async function MySubmissions({
 }: { searchParams: Promise<{ sent?: string; revised?: string }> }) {
   const { sent, revised } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
   const { data: subs } = await supabase

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import ReviewControls from "./review-controls";
 import { formatReward } from "@/lib/format";
 import { tierInfo } from "@/lib/proof-score";
@@ -13,9 +13,7 @@ export default async function ReviewPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
   const { data: gig } = await supabase

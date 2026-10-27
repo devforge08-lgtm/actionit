@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { Num, SectionLabel } from "@/components/brand/primitives";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck, Building2, ExternalLink } from "lucide-react";
@@ -43,9 +43,7 @@ export default async function AdminPage({
 }) {
   const { show, error } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login?next=/admin");
 
   // Non-admins get a 404 so the page doesn't advertise itself

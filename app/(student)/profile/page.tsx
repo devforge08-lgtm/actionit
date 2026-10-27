@@ -1,26 +1,18 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: submissions }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase.from("submissions").select("status").eq("student_id", user.id),
+  ]);
   if (!profile) redirect("/onboarding");
   if (profile.role === "company") redirect("/company");
-
-  const { data: submissions } = await supabase
-    .from("submissions")
-    .select("status")
-    .eq("student_id", user.id);
 
   const stats = {
     total: submissions?.length ?? 0,

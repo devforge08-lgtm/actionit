@@ -183,8 +183,12 @@
 .brand-grain-layer {
   position: absolute;
   inset: -50%;
-  filter: url(#brand-noise);
+  /* Noise drawn once as a small tile and repeated. A live SVG filter over the
+     whole viewport made the browser redraw it constantly, which lagged scrolling. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
   opacity: 0.035;
+  will-change: transform;
   animation: brand-grain-shift 7s steps(6) infinite;
 }
 .brand-vignette {

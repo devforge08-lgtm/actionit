@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import SubmitForm from "../../../gigs/[id]/submit/submit-form";
 import { ArrowLeft } from "lucide-react";
 
@@ -11,9 +11,7 @@ export default async function RevisePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect(`/login?next=/submissions/${id}/revise`);
 
   const { data: sub } = await supabase

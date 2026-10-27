@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { setGigStatus } from "./new/actions";
 import { formatReward, formatDeadline } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,7 @@ import { PlusCircle, Users, Briefcase } from "lucide-react";
 
 export default async function MyGigsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
   const { data: company } = await supabase

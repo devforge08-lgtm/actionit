@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
   Briefcase,
@@ -14,9 +14,7 @@ import {
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
   const { data: company } = await supabase

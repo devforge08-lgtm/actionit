@@ -32,20 +32,24 @@ export default function CompanyLayout({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(createClient);
   const [unread, setUnread] = useState(0);
+
+  // Send any due "no applicants" messages once per visit, not on every click
+  useEffect(() => {
+    supabase.rpc("notify_unfilled_gigs").then(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      // Sends any due "no applicants" messages, then counts unread ones
-      await supabase.rpc("notify_unfilled_gigs");
-      const { count } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .is("read_at", null);
-      if (!cancelled) setUnread(count ?? 0);
-    })();
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .is("read_at", null)
+      .then(({ count }) => {
+        if (!cancelled) setUnread(count ?? 0);
+      });
     return () => {
       cancelled = true;
     };

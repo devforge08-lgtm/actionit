@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GraduationCap, Briefcase, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function LoginPage() {
   return (
@@ -25,7 +25,6 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(startSignUp);
-  const [role, setRole] = useState<"student" | "company">("student");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,7 +55,6 @@ function LoginForm() {
         password,
         options: {
           emailRedirectTo: redirectTo,
-          data: { pending_role: role },
         },
       });
 
@@ -210,33 +208,7 @@ function LoginForm() {
             <div className="flex-1 h-px bg-green/10" />
           </div>
 
-          {/* Role selector — only on signup */}
-          {isSignUp && (
-            <div className="grid grid-cols-2 gap-3">
-              {(
-                [
-                  { key: "student", label: "Student", icon: GraduationCap, desc: "Find gigs & earn" },
-                  { key: "company", label: "Business", icon: Briefcase, desc: "Post gigs & hire" },
-                ] as const
-              ).map((r) => (
-                <button
-                  key={r.key}
-                  type="button"
-                  onClick={() => setRole(r.key)}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl border p-4 transition-all ${
-                    role === r.key
-                      ? "border-green bg-green/5 text-foreground"
-                      : "border-green/10 text-muted-foreground hover:border-green/20 hover:bg-green/[0.02]"
-                  }`}
-                >
-                  <r.icon className={`h-5 w-5 ${role === r.key ? "text-green" : ""}`} />
-                  <span className="text-sm font-medium">{r.label}</span>
-                  <span className="text-[11px] text-muted-foreground">{r.desc}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
+          {/* Student or business is asked once, on the next screen (onboarding) */}
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-3">
             <Input

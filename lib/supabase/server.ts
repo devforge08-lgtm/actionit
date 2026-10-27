@@ -24,3 +24,13 @@ export async function createClient() {
     }
   );
 }
+
+// Reads the signed-in user from the session cookie. getClaims() verifies the
+// JWT locally when the project uses asymmetric signing keys, so it skips the
+// round trip to the Auth server that getUser() makes on every page load.
+export async function getSessionUser(
+  supabase: Awaited<ReturnType<typeof createClient>>
+): Promise<{ id: string } | null> {
+  const { data } = await supabase.auth.getClaims();
+  return data?.claims?.sub ? { id: data.claims.sub } : null;
+}

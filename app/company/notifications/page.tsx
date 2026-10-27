@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { SectionLabel } from "@/components/brand/primitives";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
@@ -8,9 +8,7 @@ import { markAllRead } from "./actions";
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
   // Sends any due "no applicants" messages before listing them

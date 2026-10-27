@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 
 export type ReviewState = { error?: string; ok?: string } | null;
 
 async function ownGig(gigId: string) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) return { supabase, gig: null };
   const { data: gig } = await supabase
     .from("gigs")

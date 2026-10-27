@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Num, SectionLabel } from "@/components/brand/primitives";
 import {
@@ -16,24 +16,15 @@ import {
 
 export default async function CompanyDashboard() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, full_name")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: company }] = await Promise.all([
+    supabase.from("profiles").select("role, full_name").eq("id", user.id).single(),
+    supabase.from("companies").select("id, name").eq("owner_id", user.id).single(),
+  ]);
   if (!profile?.role) redirect("/onboarding");
   if (profile.role !== "company") redirect("/dashboard");
-
-  const { data: company } = await supabase
-    .from("companies")
-    .select("id, name")
-    .eq("owner_id", user.id)
-    .single();
   if (!company) redirect("/onboarding");
 
   // Fetch stats
