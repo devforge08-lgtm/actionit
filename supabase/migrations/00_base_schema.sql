@@ -1,7 +1,7 @@
 -- =====================================================
 -- Base schema: profiles, companies, gigs, submissions, file storage
 -- Run this once on a fresh Supabase project, before the other migrations.
--- Then run gig_selection_and_notifications.sql.
+-- Then run gig_selection_and_notifications.sql, then proof_score.sql.
 -- (add_profile_fields.sql and gig_lifecycle.sql are already folded in here.)
 -- =====================================================
 

@@ -35,6 +35,9 @@ export async function rateSubmission(_prev: ReviewState, formData: FormData): Pr
     .update({ rating, feedback })
     .eq("id", id)
     .eq("gig_id", gigId);
+  if (error?.message.includes("decision_locked")) {
+    return { error: "Ratings are locked once a winner is picked" };
+  }
   if (error) return { error: error.message };
 
   revalidatePath(`/company/gigs/${gigId}/submissions`);
@@ -69,6 +72,8 @@ export async function chooseWinner(gigId: string, submissionId: string): Promise
     const { error } = await supabase.from("submissions").update({ status: "rejected" }).in("id", others);
     if (error) return { error: error.message };
   }
+  // Selecting the winner also awards Proof Score points to every rated
+  // applicant (trg_award_points_on_winner in proof_score.sql).
   const { error } = await supabase.from("submissions").update({ status: "selected" }).eq("id", submissionId);
   if (error) return { error: error.message };
 

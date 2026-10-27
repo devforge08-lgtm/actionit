@@ -14,7 +14,8 @@ import {
   Target,
 } from "lucide-react";
 import DeadlineReminder from "./deadline-reminder";
-import { Num, SectionLabel } from "@/components/brand/primitives";
+import { Num, ProofRing, SectionLabel } from "@/components/brand/primitives";
+import { nextTierProgress, tierInfo } from "@/lib/proof-score";
 
 export default async function StudentDashboard() {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export default async function StudentDashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name, username")
+    .select("role, full_name, username, proof_score, proof_tier, proof_gigs, proof_wins, proof_rating")
     .eq("id", user.id)
     .single();
   if (!profile?.role) redirect("/onboarding");
@@ -38,6 +39,21 @@ export default async function StudentDashboard() {
     )
     .eq("student_id", user.id)
     .order("created_at", { ascending: false });
+
+  const { data: points } = await supabase
+    .from("proof_points")
+    .select("id, gig_title, company_name, rating, won, points, created_at")
+    .eq("student_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  const tier = tierInfo(profile.proof_tier);
+  const progress = nextTierProgress(profile.proof_tier, {
+    score: profile.proof_score,
+    gigs: profile.proof_gigs,
+    wins: profile.proof_wins,
+    rating: profile.proof_rating,
+  });
 
   const subs = submissions ?? [];
   const totalSubmissions = subs.length;
@@ -113,6 +129,73 @@ export default async function StudentDashboard() {
             <p className="brand-eyebrow text-muted-foreground mt-2">
               @{profile.username} · Student
             </p>
+          </div>
+        </div>
+
+        {/* Proof Score */}
+        <div className="brand-panel relative overflow-hidden rounded-2xl p-5 sm:p-6">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,196,127,0.06),transparent_70%)]" />
+          <div className="relative grid gap-6 md:grid-cols-[auto_1fr_1fr] md:items-center">
+            <div className="flex items-center gap-5">
+              <ProofRing value={profile.proof_score} size={112} />
+              <div className="space-y-1">
+                <p className="brand-eyebrow text-muted-foreground">Tier</p>
+                <p className={`brand-display text-2xl ${tier.color}`}>{tier.name}</p>
+                <p className="text-xs text-muted-foreground brand-num">
+                  {profile.proof_gigs} rated gig{profile.proof_gigs === 1 ? "" : "s"} · {profile.proof_wins} win
+                  {profile.proof_wins === 1 ? "" : "s"}
+                  {profile.proof_rating != null && ` · avg ${profile.proof_rating}/10`}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {progress ? (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Progress to {progress.next.name}</span>
+                    <Num className="text-green font-medium">{progress.percent}%</Num>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-green/70 to-green"
+                      style={{ width: `${progress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Needs {progress.missing.join(", ")}.
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-amber-400">You&apos;re at the top tier. Keep the ratings high.</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Every rated gig earns points (rating × 5, +25 if you win), more for bigger gigs.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="brand-eyebrow text-muted-foreground">Recent points</p>
+              {points?.length ? (
+                <ul className="space-y-1.5">
+                  {points.map((pt) => (
+                    <li key={pt.id} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="truncate">
+                        {pt.gig_title}
+                        <span className="text-muted-foreground">
+                          {" "}· {pt.rating}/10{pt.won && " · won"}
+                        </span>
+                      </span>
+                      <Num className="text-green shrink-0">+{pt.points}</Num>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Points show up here once a business rates your work and picks a winner.
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

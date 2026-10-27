@@ -47,7 +47,9 @@ export default function ReviewControls({
 
         <div className="space-y-2">
           <div className="flex items-baseline justify-between">
-            <span className="brand-eyebrow text-muted-foreground">Rate this work</span>
+            <span className="brand-eyebrow text-muted-foreground">
+              {winnerPicked ? "Rating (locked once a winner is picked)" : "Rate this work"}
+            </span>
             <span className="brand-num text-sm text-green">{picked ? `${picked}/10` : "–/10"}</span>
           </div>
           <div className="grid grid-cols-10 gap-1" role="radiogroup" aria-label="Rating out of 10">
@@ -57,12 +59,13 @@ export default function ReviewControls({
                 type="button"
                 role="radio"
                 aria-checked={picked === v}
+                disabled={winnerPicked}
                 onClick={() => setPicked(v)}
                 className={`brand-num h-9 rounded-lg border text-sm transition-colors ${
                   picked && v <= picked
                     ? "border-green/40 bg-green/15 text-green"
                     : "border-white/[0.06] bg-white/[0.02] text-muted-foreground hover:border-green/20"
-                }`}
+                } disabled:cursor-not-allowed disabled:hover:border-white/[0.06]`}
               >
                 {v}
               </button>
@@ -86,7 +89,7 @@ export default function ReviewControls({
             disabled={!picked || saving}
             className="border-green/15 hover:bg-green/5"
           >
-            {saving ? "Saving…" : rating ? "Update rating" : "Save rating"}
+            {saving ? "Saving…" : winnerPicked ? "Update feedback" : rating ? "Update rating" : "Save rating"}
           </Button>
 
           {!winnerPicked && (

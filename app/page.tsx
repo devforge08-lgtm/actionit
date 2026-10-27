@@ -487,7 +487,7 @@ function HowItWorks() {
                 {[
                   { label: "Tier", value: "Proven", color: "text-green" },
                   { label: "Gigs completed", value: "23", color: "" },
-                  { label: "Avg rating", value: "4.8 ★", color: "text-green" },
+                  { label: "Avg rating", value: "8.6/10", color: "text-green" },
                   { label: "This month", value: "+48 pts", color: "text-emerald-400" },
                 ].map((row) => (
                   <div key={row.label} className="flex justify-between text-sm">
@@ -528,7 +528,7 @@ function ProofScore() {
       name: "Starter", range: "0 \u2013 199", icon: Star, color: "text-zinc-400",
       gradient: "from-zinc-500/15 to-zinc-800/10", border: "border-zinc-500/20",
       details: [
-        "Complete your first 3 gigs to unlock Rising tier",
+        "Reach 200 points with 10 rated gigs and a win to unlock Rising",
         "Basic profile badge visible to businesses",
         "Access to all open gig categories",
         "Build your portfolio from day one",
@@ -551,6 +551,7 @@ function ProofScore() {
         "Verified badge \u2014 businesses trust your track record",
         "Featured in \u201cTop Talent\u201d recommendations",
         "Priority access to high-value gigs (\u20B91,000+)",
+        "Unlocks internship applications",
         "Analytics dashboard with performance insights",
       ],
     },
@@ -560,7 +561,7 @@ function ProofScore() {
       details: [
         "Exclusive access to premium gigs",
         "Elite verified badge \u2014 the gold standard",
-        "Direct invitations from partner companies",
+        "Direct job and internship invites from partner companies",
         "Eligible for ActionIT ambassador program",
       ],
     },
@@ -750,7 +751,7 @@ function FAQ() {
   const faqs = [
     { q: "Is ActionIT free for students?", a: "Yes. Signing up is free and we charge zero commission on gigs paying under \u20B91,000. For higher-paying gigs, a small platform fee applies — but you always keep the majority." },
     { q: "What kind of gigs are available?", a: "Everything from social media design and website tweaks to data entry, content writing, video editing, and more. Gigs are real tasks from real businesses." },
-    { q: "How does the Proof Score work?", a: "Your Proof Score is calculated from the number of gigs you complete, ratings from businesses, consistency, and the complexity of tasks. It is a verifiable metric — businesses can check it before hiring you." },
+    { q: "How does the Proof Score work?", a: "Every gig you're rated on earns points: your rating out of 10 \u00d7 5, plus 25 if you win, with bigger gigs counting for more. Higher tiers also need enough gigs, wins and a strong average rating, so the score can't be farmed. Businesses see it on every application." },
     { q: "How do businesses post gigs?", a: "Sign up as a business, describe your task, set a budget, and publish. Students can apply within minutes." },
     { q: "Can I use ActionIT while in college?", a: "Absolutely. ActionIT is built for college students. Gigs are scoped to be manageable alongside your coursework." },
   ];

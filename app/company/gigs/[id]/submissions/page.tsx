@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReviewControls from "./review-controls";
 import { formatReward } from "@/lib/format";
+import { tierInfo } from "@/lib/proof-score";
 import { ArrowLeft, FileText, ExternalLink, Paperclip } from "lucide-react";
 
 export default async function ReviewPage({
@@ -29,7 +30,7 @@ export default async function ReviewPage({
   const { data: subs } = await supabase
     .from("submissions")
     .select(
-      "id, note, links, file_paths, status, feedback, rating, paid_at, created_at, profiles(full_name, username, college)"
+      "id, note, links, file_paths, status, feedback, rating, paid_at, created_at, profiles(full_name, username, college, proof_score, proof_tier, proof_gigs, proof_wins, proof_rating)"
     )
     .eq("gig_id", id)
     .order("created_at", { ascending: true });
@@ -107,7 +108,13 @@ export default async function ReviewPage({
               full_name: string;
               username: string;
               college: string | null;
+              proof_score: number;
+              proof_tier: string;
+              proof_gigs: number;
+              proof_wins: number;
+              proof_rating: number | null;
             };
+            const tier = tierInfo(p.proof_tier);
             return (
               <div
                 key={s.id}
@@ -119,6 +126,14 @@ export default async function ReviewPage({
                     <div className="text-sm text-muted-foreground">
                       @{p.username}
                       {p.college && ` · ${p.college}`}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1 brand-num">
+                      <span className="text-green">Proof Score {p.proof_score}</span>
+                      {" · "}
+                      <span className={tier.color}>{tier.name}</span>
+                      {" · "}
+                      {p.proof_gigs} gig{p.proof_gigs === 1 ? "" : "s"}, {p.proof_wins} win{p.proof_wins === 1 ? "" : "s"}
+                      {p.proof_rating != null && ` · avg ${p.proof_rating}/10`}
                     </div>
                   </div>
                   <span
