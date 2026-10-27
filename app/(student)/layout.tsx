@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Search,
@@ -30,13 +30,12 @@ export default function DashboardLayout({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const [supabase] = useState(createClient);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    // Full page load so no cached logged-in pages survive the sign-out
+    window.location.assign("/login");
   }
 
   return (

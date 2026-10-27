@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ export default function LoginPage() {
 
 function LoginForm() {
   const supabase = createClient();
-  const router = useRouter();
   const params = useSearchParams();
   const next = params.get("next") || "/dashboard";
   const startSignUp = params.get("signup") === "1";
@@ -27,6 +26,13 @@ function LoginForm() {
   const [isSignUp, setIsSignUp] = useState(startSignUp);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Full page load after logging in: a client-side push can reuse the cached
+  // "not logged in, go to /login" redirect from before, which left this page
+  // stuck on "Please wait…" after signing out and back in.
+  function go(path: string) {
+    window.location.assign(path);
+  }
 
   const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=${encodeURIComponent(next)}`;
 
@@ -70,8 +76,7 @@ function LoginForm() {
           if (loginErr) {
             return setError("An account with this email already exists. Check your password.");
           }
-          router.push(next);
-          router.refresh();
+          go(next);
           return;
         }
 
@@ -81,8 +86,7 @@ function LoginForm() {
           const { error: autoErr } =
             await supabase.auth.signInWithPassword({ email, password });
           if (!autoErr) {
-            router.push("/onboarding");
-            router.refresh();
+            go("/onboarding");
             return;
           }
           // Account exists but needs confirmation — can't auto-login
@@ -96,8 +100,7 @@ function LoginForm() {
 
       // If signup returned a session, user is auto-confirmed → go straight in
       if (data.session) {
-        router.push("/onboarding");
-        router.refresh();
+        go("/onboarding");
         return;
       }
 
@@ -109,8 +112,7 @@ function LoginForm() {
         if (loginErr) {
           return setError("An account with this email already exists. Try logging in instead.");
         }
-        router.push(next);
-        router.refresh();
+        go(next);
         return;
       }
 
@@ -120,8 +122,7 @@ function LoginForm() {
         await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
       if (!autoLoginErr) {
-        router.push("/onboarding");
-        router.refresh();
+        go("/onboarding");
         return;
       }
       // If auto-login fails, they need to confirm email first
@@ -144,8 +145,7 @@ function LoginForm() {
       );
       return;
     }
-    router.push(next);
-    router.refresh();
+    go(next);
   }
 
   return (

@@ -14,7 +14,6 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 const navItems = [
   { label: "Dashboard", href: "/company", icon: LayoutDashboard },
@@ -31,7 +30,6 @@ export default function CompanyLayout({
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
   const [supabase] = useState(createClient);
   const [unread, setUnread] = useState(0);
 
@@ -58,8 +56,8 @@ export default function CompanyLayout({
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    // Full page load so no cached logged-in pages survive the sign-out
+    window.location.assign("/login");
   }
 
   return (
