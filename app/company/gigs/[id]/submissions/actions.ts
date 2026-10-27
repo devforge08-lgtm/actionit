@@ -18,6 +18,46 @@ async function ownGig(gigId: string) {
   return { supabase, gig: owner === user.id ? gig : null };
 }
 
+/** A change request that's been sent but not answered, and isn't overdue yet. */
+function revisionPending(s: { revision_requested_at: string | null; revision_due: string | null; revised_at: string | null }) {
+  return !!s.revision_requested_at && !s.revised_at && !!s.revision_due && new Date(s.revision_due) > new Date();
+}
+
+/**
+ * Send a submission back once for changes. The business picks the due date
+ * (the end of that day, India time), which can run past the gig deadline.
+ */
+export async function requestChanges(_prev: ReviewState, formData: FormData): Promise<ReviewState> {
+  const id = String(formData.get("id"));
+  const gigId = String(formData.get("gig_id"));
+  const note = String(formData.get("revision_note") ?? "").trim();
+  const dueRaw = String(formData.get("revision_due") ?? "");
+
+  if (note.length < 10) return { error: "Tell the student what to change (at least a sentence)" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueRaw)) return { error: "Pick a due date for the changes" };
+  const due = new Date(dueRaw + "T23:59:59+05:30");
+  if (due <= new Date()) return { error: "The due date has to be today or later" };
+
+  const { supabase, gig } = await ownGig(gigId);
+  if (!gig) return { error: "You can only review your own gigs" };
+
+  const { error } = await supabase
+    .from("submissions")
+    .update({
+      revision_note: note,
+      revision_due: due.toISOString(),
+      revision_requested_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("gig_id", gigId);
+  if (error?.message.includes("revision_used")) return { error: "You've already asked this student for changes once" };
+  if (error?.message.includes("decision_locked")) return { error: "A winner has already been picked" };
+  if (error) return { error: error.message };
+
+  revalidatePath(`/company/gigs/${gigId}/submissions`);
+  return { ok: "Change request sent" };
+}
+
 /** Save the 1-10 rating and feedback for one submission. */
 export async function rateSubmission(_prev: ReviewState, formData: FormData): Promise<ReviewState> {
   const id = String(formData.get("id"));
@@ -61,10 +101,11 @@ export async function chooseWinner(gigId: string, submissionId: string): Promise
 
   const { data: subs } = await supabase
     .from("submissions")
-    .select("id, status, rating")
+    .select("id, status, rating, revision_requested_at, revision_due, revised_at")
     .eq("gig_id", gigId);
   if (!subs?.some((s) => s.id === submissionId)) return { error: "Submission not found" };
   if (subs.some((s) => s.status === "selected")) return { error: "You've already picked a winner for this gig" };
+  if (subs.some(revisionPending)) return { error: "Wait for the changes you asked for, or until their due date passes" };
   if (subs.some((s) => !s.rating)) return { error: "Rate every applicant out of 10 before picking a winner" };
 
   const others = subs.filter((s) => s.id !== submissionId).map((s) => s.id);

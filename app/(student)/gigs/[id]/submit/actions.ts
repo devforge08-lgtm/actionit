@@ -44,6 +44,33 @@ export async function createSubmission(input: {
   redirect("/submissions?sent=1");
 }
 
+/** The student's answer to a change request, sent through submit_revision(). */
+export async function submitRevision(input: {
+  submissionId: string; gigId: string; note: string; links: string[]; filePaths: string[];
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Please log in again" };
+
+  const prefix = `${user.id}/${input.gigId}/`;
+  if (input.filePaths.some((p) => !p.startsWith(prefix))) return { error: "Invalid file path" };
+  if (input.links.some((l) => !/^https?:\/\//i.test(l))) return { error: "Invalid link" };
+
+  const { error } = await supabase.rpc("submit_revision", {
+    p_submission: input.submissionId,
+    p_reply: input.note,
+    p_links: input.links.slice(0, 5),
+    p_file_paths: input.filePaths.slice(0, 5),
+  });
+  if (error) {
+    if (error.message.includes("revision_late")) return { error: "The due date for these changes has passed" };
+    if (error.message.includes("no_revision_open")) return { error: "You've already sent your changes" };
+    if (error.message.includes("decision_locked")) return { error: "The business has already picked a winner" };
+    return { error: error.message };
+  }
+  redirect("/submissions?revised=1");
+}
+
 export async function withdrawSubmission(submissionId: string) {
   const supabase = await createClient();
   const { data: sub } = await supabase

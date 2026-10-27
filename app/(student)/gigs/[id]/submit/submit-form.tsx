@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createSubmission } from "./actions";
+import { createSubmission, submitRevision } from "./actions";
 import { Plus, X, Upload } from "lucide-react";
 
 const MAX_FILES = 5;
@@ -20,9 +20,12 @@ function safeName(name: string) {
 export default function SubmitForm({
   gigId,
   userId,
+  revisionOf,
 }: {
   gigId: string;
   userId: string;
+  /** When set, this form sends changes for that submission instead */
+  revisionOf?: string;
 }) {
   const supabase = createClient();
   const [note, setNote] = useState("");
@@ -69,12 +72,10 @@ export default function SubmitForm({
         uploaded.push(path);
       }
       setStatus("Submitting…");
-      const res = await createSubmission({
-        gigId,
-        note: note.trim(),
-        links: cleanLinks,
-        filePaths: uploaded,
-      });
+      const payload = { gigId, note: note.trim(), links: cleanLinks, filePaths: uploaded };
+      const res = revisionOf
+        ? await submitRevision({ ...payload, submissionId: revisionOf })
+        : await createSubmission(payload);
       if (res?.error) throw new Error(res.error);
     } catch (err) {
       if (uploaded.length)
@@ -100,7 +101,11 @@ export default function SubmitForm({
           rows={6}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="Explain your approach, decisions, what you'd do with more time…"
+          placeholder={
+            revisionOf
+              ? "What did you change? Add new links or files below."
+              : "Explain your approach, decisions, what you'd do with more time…"
+          }
           className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green/30 resize-none"
         />
       </div>
@@ -201,7 +206,7 @@ export default function SubmitForm({
         disabled={busy}
         className="w-full py-3 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {busy ? status ?? "Submitting…" : "Submit proof-of-work"}
+        {busy ? status ?? "Submitting…" : revisionOf ? "Send changes" : "Submit proof-of-work"}
       </button>
     </form>
   );

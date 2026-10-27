@@ -23,8 +23,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default async function MySubmissions({
   searchParams,
-}: { searchParams: Promise<{ sent?: string }> }) {
-  const { sent } = await searchParams;
+}: { searchParams: Promise<{ sent?: string; revised?: string }> }) {
+  const { sent, revised } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,7 +34,7 @@ export default async function MySubmissions({
   const { data: subs } = await supabase
     .from("submissions")
     .select(
-      "id, status, feedback, rating, paid_at, created_at, gigs(id, title, reward_type, companies(name))"
+      "id, status, feedback, rating, paid_at, created_at, revision_note, revision_due, revision_requested_at, revised_at, gigs(id, title, reward_type, companies(name))"
     )
     .eq("student_id", user.id)
     .order("created_at", { ascending: false });
@@ -61,6 +61,12 @@ export default async function MySubmissions({
         <div className="rounded-xl border border-green/20 bg-gradient-to-r from-green/10 to-green/5 p-3 text-sm text-green">
           Submitted! The company will review it and you'll see the status
           here.
+        </div>
+      )}
+
+      {revised && (
+        <div className="rounded-xl border border-green/20 bg-gradient-to-r from-green/10 to-green/5 p-3 text-sm text-green">
+          Changes sent! The business will see them next to your original work.
         </div>
       )}
 
@@ -131,6 +137,33 @@ export default async function MySubmissions({
                   </div>
                 )}
 
+                {s.revision_requested_at && (() => {
+                  const open = !s.revised_at && !!s.revision_due && new Date(s.revision_due) > new Date();
+                  return (
+                    <div className={`text-sm rounded-xl border p-3 space-y-2 ${open ? "border-amber-400/20 bg-amber-400/5" : "border-white/[0.06] bg-white/[0.02]"}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className={`font-medium ${open ? "text-amber-400" : "text-muted-foreground"}`}>
+                          {s.revised_at ? "Changes sent" : open ? "Changes requested" : "Change request expired"}
+                        </span>
+                        {s.revision_due && (
+                          <span className="brand-num text-xs text-muted-foreground">
+                            due {new Date(s.revision_due).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })}
+                          </span>
+                        )}
+                      </div>
+                      <p className="whitespace-pre-wrap text-muted-foreground">{s.revision_note}</p>
+                      {open && (
+                        <Link
+                          href={`/submissions/${s.id}/revise`}
+                          className="inline-flex items-center px-4 py-2 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors"
+                        >
+                          Send your changes
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {s.feedback && (
                   <div className="text-sm rounded-xl bg-green/5 border border-green/10 p-3">
                     <span className="font-medium text-green">
@@ -149,7 +182,7 @@ export default async function MySubmissions({
                       year: "numeric",
                     })}
                   </span>
-                  {s.status === "submitted" && (
+                  {s.status === "submitted" && !s.revision_requested_at && (
                     <form
                       action={async () => {
                         "use server";

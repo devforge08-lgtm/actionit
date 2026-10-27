@@ -1,10 +1,10 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { rateSubmission, chooseWinner, markPaid, type ReviewState } from "./actions";
+import { rateSubmission, chooseWinner, markPaid, requestChanges, type ReviewState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Trophy } from "lucide-react";
+import { RotateCcw, Trophy } from "lucide-react";
 
 export default function ReviewControls({
   gigId,
@@ -16,6 +16,9 @@ export default function ReviewControls({
   rewardIsPaid,
   winnerPicked,
   canPickWinner,
+  canRequestChanges,
+  defaultDue,
+  minDue,
 }: {
   gigId: string;
   submissionId: string;
@@ -26,17 +29,24 @@ export default function ReviewControls({
   rewardIsPaid: boolean;
   winnerPicked: boolean;
   canPickWinner: boolean;
+  canRequestChanges: boolean;
+  /** yyyy-mm-dd, the gig deadline when there's still time before it */
+  defaultDue: string;
+  /** yyyy-mm-dd, today */
+  minDue: string;
 }) {
   const [picked, setPicked] = useState<number | null>(rating);
   const [rateState, rateAction, saving] = useActionState(rateSubmission, null);
   const [actionState, setActionState] = useState<ReviewState>(null);
   const [busy, startTransition] = useTransition();
+  const [askOpen, setAskOpen] = useState(false);
+  const [changeState, changeAction, sending] = useActionState(requestChanges, null);
 
   function run(fn: () => Promise<ReviewState>) {
     startTransition(async () => setActionState(await fn()));
   }
 
-  const message = actionState ?? rateState;
+  const message = actionState ?? changeState ?? rateState;
 
   return (
     <div className="space-y-4 border-t border-white/[0.06] pt-4">
@@ -105,6 +115,19 @@ export default function ReviewControls({
             </Button>
           )}
 
+          {canRequestChanges && !askOpen && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setAskOpen(true)}
+              className="border-white/[0.08] hover:bg-white/[0.04]"
+            >
+              <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+              Ask for changes
+            </Button>
+          )}
+
           {isWinner && !paid && (
             <Button
               type="button"
@@ -118,6 +141,45 @@ export default function ReviewControls({
           )}
         </div>
       </form>
+
+      {canRequestChanges && askOpen && (
+        <form action={changeAction} className="space-y-3 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+          <input type="hidden" name="id" value={submissionId} />
+          <input type="hidden" name="gig_id" value={gigId} />
+          <div className="brand-eyebrow text-muted-foreground">Ask for changes · one round only</div>
+          <Textarea
+            name="revision_note"
+            rows={3}
+            required
+            placeholder="What should they change or add?"
+            className="border-white/[0.06] bg-white/[0.03] focus-visible:ring-green/30 focus-visible:border-green/20"
+          />
+          <label className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="text-muted-foreground">Changes due by</span>
+            <input
+              type="date"
+              name="revision_due"
+              required
+              min={minDue}
+              defaultValue={defaultDue}
+              className="rounded-lg border border-white/[0.06] bg-white/[0.03] px-3 py-1.5 text-sm [color-scheme:dark] focus:outline-none focus:ring-1 focus:ring-green/30"
+            />
+          </label>
+          {!defaultDue && (
+            <p className="text-xs text-muted-foreground">
+              There's no time left before the gig deadline, so pick how long they get.
+            </p>
+          )}
+          <div className="flex gap-2">
+            <Button type="submit" size="sm" disabled={sending} className="bg-green text-green-foreground hover:bg-green/90">
+              {sending ? "Sending…" : "Send request"}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => setAskOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
 
       {message?.error && <p className="text-sm text-red-400">{message.error}</p>}
       {message?.ok && <p className="text-sm text-green">{message.ok}</p>}
