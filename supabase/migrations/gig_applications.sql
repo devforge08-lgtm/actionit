@@ -11,7 +11,8 @@
 -- Accepted students who never sent work become rejected when the winner
 -- is picked, with no rating and no points.
 --
--- Run after achievements.sql. Safe to run more than once.
+-- Run after achievements.sql and gig_applications_0_status_values.sql.
+-- Safe to run more than once.
 -- =====================================================
 
 -- 1. New columns
