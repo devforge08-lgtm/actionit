@@ -13,7 +13,9 @@ import {
   Zap,
   Target,
 } from "lucide-react";
-import DeadlineReminder from "./deadline-reminder";
+import ImportantPanel from "@/components/important-panel";
+import ImportantPopup from "@/components/important-popup";
+import { NOTIFICATION_FIELDS, type Notification } from "@/lib/notifications";
 import { Num, ProofRing, SectionLabel } from "@/components/brand/primitives";
 import { nextTierProgress, tierInfo } from "@/lib/proof-score";
 
@@ -22,8 +24,11 @@ export default async function StudentDashboard() {
   const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
+  // Send any due deadline reminders first so they show up below
+  await supabase.rpc("send_due_notifications");
+
   // Fetch everything at once instead of one query after another
-  const [{ data: profile }, { data: submissions }, { data: points }] =
+  const [{ data: profile }, { data: submissions }, { data: points }, { data: important }] =
     await Promise.all([
       supabase
         .from("profiles")
@@ -43,6 +48,14 @@ export default async function StudentDashboard() {
         .eq("student_id", user.id)
         .order("created_at", { ascending: false })
         .limit(6),
+      supabase
+        .from("notifications")
+        .select(NOTIFICATION_FIELDS)
+        .eq("user_id", user.id)
+        .eq("important", true)
+        .is("read_at", null)
+        .order("created_at", { ascending: false })
+        .limit(8),
     ]);
   if (!profile?.role) redirect("/onboarding");
   if (profile.role === "company") redirect("/company");
@@ -88,8 +101,6 @@ export default async function StudentDashboard() {
     })
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
-  const urgentDeadlines = upcomingDeadlines.filter((d) => d.daysLeft <= 1);
-
   const stats = [
     {
       label: "Active Gigs",
@@ -115,9 +126,7 @@ export default async function StudentDashboard() {
 
   return (
     <>
-      {urgentDeadlines.length > 0 && (
-        <DeadlineReminder deadlines={urgentDeadlines} />
-      )}
+      <ImportantPopup notes={(important ?? []) as Notification[]} inboxHref="/notifications" />
 
       <div className="space-y-8">
         {/* Header */}
@@ -132,6 +141,12 @@ export default async function StudentDashboard() {
             </p>
           </div>
         </div>
+
+        <ImportantPanel
+          notes={(important ?? []) as Notification[]}
+          path="/dashboard"
+          inboxHref="/notifications"
+        />
 
         {/* Proof Score */}
         <div className="brand-panel relative overflow-hidden rounded-2xl p-5 sm:p-6">

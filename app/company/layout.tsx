@@ -33,9 +33,9 @@ export default function CompanyLayout({
   const [supabase] = useState(createClient);
   const [unread, setUnread] = useState(0);
 
-  // Send any due "no applicants" messages once per visit, not on every click
+  // Send any due reminders once per visit, not on every click
   useEffect(() => {
-    supabase.rpc("notify_unfilled_gigs").then(() => {});
+    supabase.rpc("send_due_notifications").then(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -30,6 +30,8 @@ export async function applyToGig(gigId: string, pitch: string) {
     if (error.code === "23505") return { error: "You've already applied to this gig" };
     if (error.message.includes("gig_full")) return { error: "All spots for this gig have been filled" };
     if (error.message.includes("not_student")) return { error: "Only student accounts can apply" };
+    if (error.message.includes("too_many_gigs"))
+      return { error: "You already have 2 gigs going. Finish one or withdraw from one before applying to another" };
     if (error.message.includes("gig_closed") || error.code === "42501")
       return { error: "This gig isn't taking applications" };
     return { error: error.message };

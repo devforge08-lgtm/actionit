@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,6 +8,7 @@ import {
   Search,
   Briefcase,
   BarChart3,
+  Bell,
   User,
   LogOut,
   Menu,
@@ -20,6 +21,7 @@ const navItems = [
   { label: "Browse Gigs", href: "/gigs", icon: Search },
   { label: "My Gigs", href: "/submissions", icon: Briefcase },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Profile", href: "/profile", icon: User },
 ];
 
@@ -31,6 +33,28 @@ export default function DashboardLayout({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [supabase] = useState(createClient);
+  const [unread, setUnread] = useState(0);
+
+  // Send any due deadline reminders once per visit, not on every click
+  useEffect(() => {
+    supabase.rpc("send_due_notifications").then(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .is("read_at", null)
+      .then(({ count }) => {
+        if (!cancelled) setUnread(count ?? 0);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -93,6 +117,11 @@ export default function DashboardLayout({
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
+                {item.href === "/notifications" && unread > 0 && (
+                  <span className="brand-num ml-auto min-w-5 h-5 px-1.5 rounded-full bg-green text-green-foreground text-[11px] flex items-center justify-center">
+                    {unread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -125,6 +154,16 @@ export default function DashboardLayout({
             <span className="font-semibold text-sm tracking-tight">
               ActionIT
             </span>
+          </Link>
+          <Link
+            href="/notifications"
+            aria-label="Notifications"
+            className="ml-auto relative p-1.5 rounded-md hover:bg-green/10 transition-colors"
+          >
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            {unread > 0 && (
+              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-green" />
+            )}
           </Link>
         </header>
 

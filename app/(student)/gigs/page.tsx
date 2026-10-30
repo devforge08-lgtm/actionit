@@ -19,15 +19,19 @@ export const metadata = {
 
 export default async function GigBoard() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("gigs")
-    .select(
-      "id, title, description, reward_type, reward_amount, deadline, is_remote, location, max_applicants, accepted_count, companies(name, verified)"
-    )
-    .eq("status", "published")
-    .or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`)
-    .order("published_at", { ascending: false })
-    .limit(50);
+  const [{ data }, { data: activeGigs }] = await Promise.all([
+    supabase
+      .from("gigs")
+      .select(
+        "id, title, description, reward_type, reward_amount, deadline, is_remote, location, max_applicants, accepted_count, companies(name, verified)"
+      )
+      .eq("status", "published")
+      .or(`deadline.is.null,deadline.gt.${new Date().toISOString()}`)
+      .order("published_at", { ascending: false })
+      .limit(50),
+    // Null when logged out
+    supabase.rpc("my_active_gig_count"),
+  ]);
   // Gigs close once 3 students are accepted; this just covers the moment in between
   const gigs = data?.filter((g) => g.accepted_count < g.max_applicants);
 
@@ -42,6 +46,20 @@ export default async function GigBoard() {
           Do real work. Build proof. Get noticed.
         </p>
       </div>
+
+      {(activeGigs ?? 0) >= 2 && (
+        <div className="rounded-2xl border border-amber-400/25 bg-amber-400/[0.06] p-4 text-sm flex flex-wrap items-center justify-between gap-3">
+          <p>
+            <span className="font-medium">You have 2 gigs going.</span>{" "}
+            <span className="text-muted-foreground">
+              Finish one or withdraw from one to apply for more. It keeps your work quality high.
+            </span>
+          </p>
+          <Link href="/submissions" className="text-green hover:underline shrink-0">
+            My gigs
+          </Link>
+        </div>
+      )}
 
       {!gigs?.length ? (
         <div className="flex flex-col items-center text-center py-16 space-y-4">

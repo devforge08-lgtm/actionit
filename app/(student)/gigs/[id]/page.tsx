@@ -58,8 +58,9 @@ export default async function GigPage({
 
   let role: string | null = null;
   let application: { id: string; status: string } | null = null;
+  let activeGigs = 0;
   if (user) {
-    const [{ data: p }, { data: s }] = await Promise.all([
+    const [{ data: p }, { data: s }, { data: active }] = await Promise.all([
       supabase.from("profiles").select("role").eq("id", user.id).single(),
       supabase
         .from("submissions")
@@ -67,9 +68,11 @@ export default async function GigPage({
         .eq("gig_id", id)
         .eq("student_id", user.id)
         .maybeSingle(),
+      supabase.rpc("my_active_gig_count"),
     ]);
     role = p?.role ?? null;
     if (role === "student") application = s;
+    activeGigs = active ?? 0;
   }
   const slotsLeft = gig.max_applicants - gig.accepted_count;
   const pastDeadline = !!gig.deadline && new Date(gig.deadline) <= new Date();
@@ -188,6 +191,16 @@ export default async function GigPage({
             >
               Log in to apply
             </Link>
+          ) : role === "student" && activeGigs >= MAX_ACTIVE_GIGS ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                You already have {MAX_ACTIVE_GIGS} gigs going, which is the most at once so you can give each one
+                your best work. Finish one or withdraw from one, then you can apply here.
+              </p>
+              <Link href="/submissions" className={`${btn} border border-green/15 hover:bg-green/5`}>
+                View My gigs
+              </Link>
+            </div>
           ) : role === "student" ? (
             <ApplyForm gigId={gig.id} />
           ) : null}
@@ -196,6 +209,9 @@ export default async function GigPage({
     </div>
   );
 }
+
+/** Kept in step with active_gig_count() in notifications_and_gig_limit.sql */
+const MAX_ACTIVE_GIGS = 2;
 
 const btn =
   "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors";

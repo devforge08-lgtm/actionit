@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
-import GigChat from "@/components/gig-chat";
+import GigChat, { CHAT_FIELDS } from "@/components/gig-chat";
 import { ArrowLeft } from "lucide-react";
 
 const ONGOING = ["accepted", "submitted", "shortlisted"];
@@ -25,10 +25,18 @@ export default async function CompanyChatPage({
       .maybeSingle(),
     supabase
       .from("gig_messages")
-      .select("id, sender_id, body, created_at")
+      .select(CHAT_FIELDS)
       .eq("submission_id", submissionId)
       .order("created_at", { ascending: true })
       .limit(500),
+    // Opening the chat counts as reading its message notifications
+    supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .eq("submission_id", submissionId)
+      .eq("kind", "chat_message")
+      .is("read_at", null),
   ]);
   if (!sub) notFound();
   const gig = sub.gigs as unknown as { title: string; companies: { owner_id: string } | null };

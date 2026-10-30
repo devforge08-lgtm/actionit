@@ -3,6 +3,9 @@ import Link from "next/link";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Num, SectionLabel } from "@/components/brand/primitives";
+import ImportantPanel from "@/components/important-panel";
+import ImportantPopup from "@/components/important-popup";
+import { NOTIFICATION_FIELDS, type Notification } from "@/lib/notifications";
 import {
   Briefcase,
   Users,
@@ -19,10 +22,22 @@ export default async function CompanyDashboard() {
   const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: company }] = await Promise.all([
+  // Send any due reminders first so they show up below
+  await supabase.rpc("send_due_notifications");
+
+  const [{ data: profile }, { data: company }, { data: importantData }] = await Promise.all([
     supabase.from("profiles").select("role, full_name").eq("id", user.id).single(),
     supabase.from("companies").select("id, name").eq("owner_id", user.id).single(),
+    supabase
+      .from("notifications")
+      .select(NOTIFICATION_FIELDS)
+      .eq("user_id", user.id)
+      .eq("important", true)
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(8),
   ]);
+  const important = (importantData ?? []) as Notification[];
   if (!profile?.role) redirect("/onboarding");
   if (profile.role !== "company") redirect("/dashboard");
   if (!company) redirect("/onboarding");
@@ -66,6 +81,9 @@ export default async function CompanyDashboard() {
           </p>
         </div>
       </div>
+
+      <ImportantPanel notes={important} path="/company" inboxHref="/company/notifications" />
+      <ImportantPopup notes={important} inboxHref="/company/notifications" />
 
       {hasGigs ? (
         <>

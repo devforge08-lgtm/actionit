@@ -27,7 +27,7 @@ export default function ApplyForm({ gigId }: { gigId: string }) {
         className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green/30 resize-none"
       />
       <p className="text-xs text-muted-foreground">
-        The business sees your Proof Score, past gigs and achievements, and accepts up to 3 students. You do the work once you're accepted.
+        The business sees your Proof Score, past gigs and achievements, and accepts up to 3 students. You do the work once you're accepted. You can have up to 2 gigs going at once.
       </p>
       {error && <p className="text-sm text-red-400 bg-red-400/10 rounded-xl px-4 py-2.5">{error}</p>}
       <button

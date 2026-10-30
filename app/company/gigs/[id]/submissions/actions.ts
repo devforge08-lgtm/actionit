@@ -95,6 +95,8 @@ export async function acceptApplicant(gigId: string, submissionId: string): Prom
     if (error.message.includes("gig_closed")) return { error: "The deadline has passed" };
     if (error.message.includes("already_accepted")) return { error: "This student is already on the gig" };
     if (error.message.includes("decision_locked")) return { error: "A winner has already been picked" };
+    if (error.message.includes("student_busy"))
+      return { error: "This student is already on 2 other gigs, which is the most a student can take on at once" };
     return { error: error.message };
   }
 
