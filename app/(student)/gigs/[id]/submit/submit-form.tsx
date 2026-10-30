@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { createSubmission, submitRevision } from "./actions";
+import { submitWork, submitRevision } from "./actions";
 import { Plus, X, Upload } from "lucide-react";
 
 const MAX_FILES = 5;
@@ -20,10 +20,13 @@ function safeName(name: string) {
 export default function SubmitForm({
   gigId,
   userId,
+  submissionId,
   revisionOf,
 }: {
   gigId: string;
   userId: string;
+  /** The accepted application this work is for */
+  submissionId?: string;
   /** When set, this form sends changes for that submission instead */
   revisionOf?: string;
 }) {
@@ -75,7 +78,7 @@ export default function SubmitForm({
       const payload = { gigId, note: note.trim(), links: cleanLinks, filePaths: uploaded };
       const res = revisionOf
         ? await submitRevision({ ...payload, submissionId: revisionOf })
-        : await createSubmission(payload);
+        : await submitWork({ ...payload, submissionId: submissionId! });
       if (res?.error) throw new Error(res.error);
     } catch (err) {
       if (uploaded.length)

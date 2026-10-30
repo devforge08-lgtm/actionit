@@ -22,26 +22,21 @@ export default async function SubmitPage({
     .single();
   if (profile?.role !== "student") redirect(`/gigs/${id}`);
 
-  const { data: gig } = await supabase
-    .from("gigs")
-    .select("id, title, deliverables, status, deadline, max_applicants, applicant_count")
-    .eq("id", id)
-    .single();
+  const [{ data: gig }, { data: application }] = await Promise.all([
+    supabase.from("gigs").select("id, title, deliverables, deadline").eq("id", id).single(),
+    supabase
+      .from("submissions")
+      .select("id, status")
+      .eq("gig_id", id)
+      .eq("student_id", user.id)
+      .maybeSingle(),
+  ]);
   if (!gig) notFound();
 
-  const open =
-    gig.status === "published" &&
-    (!gig.deadline || new Date(gig.deadline) > new Date()) &&
-    gig.applicant_count < gig.max_applicants;
-  if (!open) redirect(`/gigs/${id}`);
-
-  const { data: existing } = await supabase
-    .from("submissions")
-    .select("id")
-    .eq("gig_id", id)
-    .eq("student_id", user.id)
-    .maybeSingle();
-  if (existing) redirect("/submissions");
+  // Only students the business accepted send work, once, before the deadline
+  if (!application) redirect(`/gigs/${id}`);
+  if (application.status !== "accepted" || (gig.deadline && new Date(gig.deadline) <= new Date()))
+    redirect("/submissions");
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -68,7 +63,7 @@ export default async function SubmitPage({
           </div>
         )}
 
-        <SubmitForm gigId={gig.id} userId={user.id} />
+        <SubmitForm gigId={gig.id} userId={user.id} submissionId={application.id} />
       </div>
     </div>
   );

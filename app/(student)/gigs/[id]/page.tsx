@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { formatReward, formatDeadline } from "@/lib/format";
+import ApplyForm from "./apply-form";
 import {
   ArrowLeft,
   MapPin,
@@ -56,26 +57,24 @@ export default async function GigPage({
   const user = await getSessionUser(supabase);
 
   let role: string | null = null;
-  let alreadySubmitted = false;
+  let application: { id: string; status: string } | null = null;
   if (user) {
     const [{ data: p }, { data: s }] = await Promise.all([
       supabase.from("profiles").select("role").eq("id", user.id).single(),
       supabase
         .from("submissions")
-        .select("id")
+        .select("id, status")
         .eq("gig_id", id)
         .eq("student_id", user.id)
         .maybeSingle(),
     ]);
     role = p?.role ?? null;
-    alreadySubmitted = role === "student" && !!s;
+    if (role === "student") application = s;
   }
-  const slotsLeft = gig.max_applicants - gig.applicant_count;
+  const slotsLeft = gig.max_applicants - gig.accepted_count;
+  const pastDeadline = !!gig.deadline && new Date(gig.deadline) <= new Date();
   const isOwner = user?.id === company.owner_id;
-  const open =
-    gig.status === "published" &&
-    (!gig.deadline || new Date(gig.deadline) > new Date()) &&
-    slotsLeft > 0;
+  const open = gig.status === "published" && !pastDeadline && slotsLeft > 0;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -134,7 +133,7 @@ export default async function GigPage({
           </span>
           <span className={"inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium " + (slotsLeft <= 1 ? "bg-amber-400/10 text-amber-400" : "bg-white/[0.03] border border-white/[0.06] text-muted-foreground")}>
             <Users className="h-3.5 w-3.5" />
-            {slotsLeft <= 0 ? "Full" : slotsLeft === 1 ? "1 spot left" : `${slotsLeft} spots left`}
+            {slotsLeft <= 0 ? "All spots taken" : slotsLeft === 1 ? "1 spot left" : `${slotsLeft} spots left`}
           </span>
           {gig.status !== "published" && (
             <span className="inline-flex items-center px-3 py-1.5 rounded-xl bg-amber-400/10 text-amber-400 text-sm font-medium uppercase">
@@ -167,16 +166,14 @@ export default async function GigPage({
               href={`/company/gigs/${gig.id}/submissions`}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors"
             >
-              View submissions
+              Review applicants
             </Link>
-          ) : alreadySubmitted ? (
-            <Link
-              href="/submissions"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-green/15 text-sm font-medium hover:bg-green/5 transition-colors"
-            >
-              You've submitted — View status
-            </Link>
-          ) : !open ? (
+          ) : application ? (
+            <ApplicationStatus
+              gigId={gig.id}
+              status={application.status}
+              pastDeadline={pastDeadline}
+            />          ) : !open ? (
             <button
               disabled
               className="px-5 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm font-medium cursor-not-allowed"
@@ -188,18 +185,66 @@ export default async function GigPage({
               href={`/login?next=/gigs/${gig.id}`}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors"
             >
-              Log in to submit
+              Log in to apply
             </Link>
           ) : role === "student" ? (
-            <Link
-              href={`/gigs/${gig.id}/submit`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors"
-            >
-              Submit your work
-            </Link>
+            <ApplyForm gigId={gig.id} />
           ) : null}
         </div>
       </div>
     </div>
+  );
+}
+
+const btn =
+  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors";
+
+/** What a student who already applied sees instead of the apply button. */
+function ApplicationStatus({
+  gigId,
+  status,
+  pastDeadline,
+}: {
+  gigId: string;
+  status: string;
+  pastDeadline: boolean;
+}) {
+  if (status === "applied") {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          You've applied. The business is looking at applicants and will accept up to 3.
+        </p>
+        <Link href="/submissions?tab=applied" className={`${btn} border border-green/15 hover:bg-green/5`}>
+          View in My gigs
+        </Link>
+      </div>
+    );
+  }
+  if (status === "declined") {
+    return (
+      <p className="text-sm text-muted-foreground">
+        The business went with other students for this one. Keep applying, every gig is a fresh shot.
+      </p>
+    );
+  }
+  if (status === "accepted") {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-green">You're in! The business accepted you for this gig.</p>
+        {pastDeadline ? (
+          <p className="text-sm text-muted-foreground">The deadline has passed without your work.</p>
+        ) : (
+          <Link href={`/gigs/${gigId}/submit`} className={`${btn} bg-green text-green-foreground hover:bg-green/90`}>
+            Submit your work
+          </Link>
+        )}
+      </div>
+    );
+  }
+  return (
+    <Link href="/submissions" className={`${btn} border border-green/15 hover:bg-green/5`}>
+      You've sent your work · View status
+    </Link>
   );
 }

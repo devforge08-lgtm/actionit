@@ -11,7 +11,7 @@ async function ownGig(gigId: string) {
   if (!user) return { supabase, gig: null };
   const { data: gig } = await supabase
     .from("gigs")
-    .select("id, status, deadline, max_applicants, applicant_count, reward_type, companies(owner_id)")
+    .select("id, status, deadline, reward_type, companies(owner_id)")
     .eq("id", gigId)
     .single();
   const owner = (gig?.companies as unknown as { owner_id: string } | null)?.owner_id;
@@ -84,31 +84,75 @@ export async function rateSubmission(_prev: ReviewState, formData: FormData): Pr
   return { ok: "Rating saved" };
 }
 
+/** Accept an applicant onto the gig. Takes one of the 3 spots. */
+export async function acceptApplicant(gigId: string, submissionId: string): Promise<ReviewState> {
+  const { supabase, gig } = await ownGig(gigId);
+  if (!gig) return { error: "You can only review your own gigs" };
+
+  const { error } = await supabase.rpc("accept_applicant", { p_submission: submissionId });
+  if (error) {
+    if (error.message.includes("gig_full")) return { error: "All spots are taken. Someone has to drop out before you can accept more" };
+    if (error.message.includes("gig_closed")) return { error: "The deadline has passed" };
+    if (error.message.includes("already_accepted")) return { error: "This student is already on the gig" };
+    if (error.message.includes("decision_locked")) return { error: "A winner has already been picked" };
+    return { error: error.message };
+  }
+
+  revalidatePath(`/company/gigs/${gigId}/submissions`);
+  return { ok: "Accepted" };
+}
+
+/** Turn down an applicant who's still waiting. They can be accepted later if a spot opens. */
+export async function declineApplicant(gigId: string, submissionId: string): Promise<ReviewState> {
+  const { supabase, gig } = await ownGig(gigId);
+  if (!gig) return { error: "You can only review your own gigs" };
+
+  const { error } = await supabase
+    .from("submissions")
+    .update({ status: "declined" })
+    .eq("id", submissionId)
+    .eq("gig_id", gigId)
+    .eq("status", "applied");
+  if (error) return { error: error.message };
+
+  revalidatePath(`/company/gigs/${gigId}/submissions`);
+  return { ok: "Declined" };
+}
+
 /**
- * Pick the winning submission. Every applicant needs a rating first, so
- * everyone gets something back for their work. The gig is closed and the
- * other submissions are marked as not selected.
+ * Pick the winning work. Everyone accepted has to have sent their work (or
+ * the deadline has passed), and every piece of work needs a rating first,
+ * so everyone gets something back for it. The gig closes, the other
+ * accepted students are marked as not selected, and anyone still waiting
+ * on their application is marked as not accepted.
  */
 export async function chooseWinner(gigId: string, submissionId: string): Promise<ReviewState> {
   const { supabase, gig } = await ownGig(gigId);
   if (!gig) return { error: "You can only review your own gigs" };
 
-  const stillOpen =
-    gig.status === "published" &&
-    (!gig.deadline || new Date(gig.deadline) > new Date()) &&
-    gig.applicant_count < gig.max_applicants;
-  if (stillOpen) return { error: "Close the gig or wait for the deadline before picking a winner" };
-
   const { data: subs } = await supabase
     .from("submissions")
-    .select("id, status, rating, revision_requested_at, revision_due, revised_at")
+    .select("id, status, rating, accepted_at, submitted_at, revision_requested_at, revision_due, revised_at")
     .eq("gig_id", gigId);
-  if (!subs?.some((s) => s.id === submissionId)) return { error: "Submission not found" };
+  if (!subs?.some((s) => s.id === submissionId && s.submitted_at)) return { error: "Only work that was sent can win" };
   if (subs.some((s) => s.status === "selected")) return { error: "You've already picked a winner for this gig" };
-  if (subs.some(revisionPending)) return { error: "Wait for the changes you asked for, or until their due date passes" };
-  if (subs.some((s) => !s.rating)) return { error: "Rate every applicant out of 10 before picking a winner" };
 
-  const others = subs.filter((s) => s.id !== submissionId).map((s) => s.id);
+  const pastDeadline = !!gig.deadline && new Date(gig.deadline) <= new Date();
+  if (!pastDeadline && subs.some((s) => s.status === "accepted"))
+    return { error: "Wait until everyone you accepted sends their work, or the deadline passes" };
+
+  const sent = subs.filter((s) => s.submitted_at);
+  if (sent.some(revisionPending)) return { error: "Wait for the changes you asked for, or until their due date passes" };
+  if (sent.some((s) => !s.rating)) return { error: "Rate every piece of work out of 10 before picking a winner" };
+
+  const waiting = subs.filter((s) => s.status === "applied").map((s) => s.id);
+  if (waiting.length) {
+    const { error } = await supabase.from("submissions").update({ status: "declined" }).in("id", waiting);
+    if (error) return { error: error.message };
+  }
+  const others = subs
+    .filter((s) => s.id !== submissionId && s.accepted_at && s.status !== "rejected")
+    .map((s) => s.id);
   if (others.length) {
     const { error } = await supabase.from("submissions").update({ status: "rejected" }).in("id", others);
     if (error) return { error: error.message };

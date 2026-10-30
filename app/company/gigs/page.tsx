@@ -21,7 +21,7 @@ export default async function MyGigsPage() {
   const { data: gigs } = await supabase
     .from("gigs")
     .select(
-      "id, title, status, reward_type, reward_amount, deadline, max_applicants, created_at, submissions(count)"
+      "id, title, status, reward_type, reward_amount, deadline, max_applicants, accepted_count, applicant_count, created_at"
     )
     .eq("company_id", company.id)
     .order("created_at", { ascending: false });
@@ -55,8 +55,6 @@ export default async function MyGigsPage() {
       ) : (
         <div className="space-y-3">
           {gigs.map((g) => {
-            const count =
-              (g.submissions as unknown as { count: number }[])?.[0]?.count ?? 0;
             return (
               <div
                 key={g.id}
@@ -91,7 +89,9 @@ export default async function MyGigsPage() {
                     className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <Users className="h-3.5 w-3.5" />
-                    {count}/{g.max_applicants}
+                    <span className="brand-num">
+                      {g.accepted_count}/{g.max_applicants} accepted · {g.applicant_count} applied
+                    </span>
                   </Link>
                   {g.status === "draft" && (
                     <form

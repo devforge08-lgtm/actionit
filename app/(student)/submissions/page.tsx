@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 
 const STATUS_STYLE: Record<string, string> = {
+  applied: "text-muted-foreground bg-muted",
+  accepted: "text-green bg-green/10",
+  declined: "text-muted-foreground bg-muted",
   submitted: "text-blue-400 bg-blue-400/10",
   shortlisted: "text-amber-400 bg-amber-400/10",
   selected: "text-green bg-green/10",
@@ -17,6 +20,8 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
+  submitted: "work sent",
+  declined: "not accepted",
   selected: "winner",
   rejected: "not selected",
 };
@@ -180,7 +185,15 @@ export default async function MySubmissions({
                       year: "numeric",
                     })}
                   </span>
-                  {s.status === "submitted" && !s.revision_requested_at && (
+                  {s.status === "accepted" && (
+                    <Link
+                      href={`/gigs/${gig.id}/submit`}
+                      className="inline-flex items-center px-4 py-2 rounded-xl bg-green text-green-foreground text-sm font-medium hover:bg-green/90 transition-colors"
+                    >
+                      Submit your work
+                    </Link>
+                  )}
+                  {(s.status === "applied" || s.status === "accepted" || s.status === "declined") && (
                     <form
                       action={async () => {
                         "use server";

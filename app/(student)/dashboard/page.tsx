@@ -57,8 +57,9 @@ export default async function StudentDashboard() {
 
   const subs = submissions ?? [];
   const totalSubmissions = subs.length;
+  // Ongoing: accepted by the business and the winner isn't picked yet
   const activeSubs = subs.filter(
-    (s) => s.status === "submitted" || s.status === "shortlisted"
+    (s) => s.status === "accepted" || s.status === "submitted" || s.status === "shortlisted"
   );
   const selectedSubs = subs.filter((s) => s.status === "selected");
   const totalEarned = selectedSubs.reduce((sum, s) => {
@@ -106,7 +107,7 @@ export default async function StudentDashboard() {
       icon: IndianRupee,
     },
     {
-      label: "Submissions",
+      label: "Applications",
       value: totalSubmissions,
       icon: Target,
     },
@@ -330,6 +331,7 @@ export default async function StudentDashboard() {
                 {subs.slice(0, 5).map((s) => {
                   const gig = s.gigs as any;
                   const statusColors: Record<string, string> = {
+                    accepted: "text-green bg-green/10",
                     submitted: "text-blue-400 bg-blue-400/10",
                     shortlisted: "text-amber-400 bg-amber-400/10",
                     selected: "text-green bg-green/10",
