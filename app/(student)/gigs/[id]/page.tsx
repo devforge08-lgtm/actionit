@@ -171,6 +171,7 @@ export default async function GigPage({
           ) : application ? (
             <ApplicationStatus
               gigId={gig.id}
+              submissionId={application.id}
               status={application.status}
               pastDeadline={pastDeadline}
             />          ) : !open ? (
@@ -202,10 +203,12 @@ const btn =
 /** What a student who already applied sees instead of the apply button. */
 function ApplicationStatus({
   gigId,
+  submissionId,
   status,
   pastDeadline,
 }: {
   gigId: string;
+  submissionId: string;
   status: string;
   pastDeadline: boolean;
 }) {
@@ -232,19 +235,30 @@ function ApplicationStatus({
     return (
       <div className="space-y-3">
         <p className="text-sm text-green">You're in! The business accepted you for this gig.</p>
-        {pastDeadline ? (
+        {pastDeadline && (
           <p className="text-sm text-muted-foreground">The deadline has passed without your work.</p>
-        ) : (
-          <Link href={`/gigs/${gigId}/submit`} className={`${btn} bg-green text-green-foreground hover:bg-green/90`}>
-            Submit your work
-          </Link>
         )}
+        <div className="flex flex-wrap gap-2">
+          {!pastDeadline && (
+            <Link href={`/gigs/${gigId}/submit`} className={`${btn} bg-green text-green-foreground hover:bg-green/90`}>
+              Submit your work
+            </Link>
+          )}
+          <Link href={`/submissions/${submissionId}/chat`} className={`${btn} border border-green/15 hover:bg-green/5`}>
+            Chat with the business
+          </Link>
+        </div>
       </div>
     );
   }
   return (
-    <Link href="/submissions" className={`${btn} border border-green/15 hover:bg-green/5`}>
-      You've sent your work · View status
-    </Link>
+    <div className="flex flex-wrap gap-2">
+      <Link href="/submissions" className={`${btn} border border-green/15 hover:bg-green/5`}>
+        You've sent your work · View status
+      </Link>
+      <Link href={`/submissions/${submissionId}/chat`} className={`${btn} border border-green/15 hover:bg-green/5`}>
+        {status === "selected" || status === "rejected" ? "View chat history" : "Chat with the business"}
+      </Link>
+    </div>
   );
 }

@@ -4,7 +4,7 @@ import { createClient, getSessionUser } from "@/lib/supabase/server";
 import { withdrawSubmission } from "../gigs/[id]/submit/actions";
 import { Num, SectionLabel } from "@/components/brand/primitives";
 import { formatReward, formatDeadline } from "@/lib/format";
-import { FileText, ExternalLink, Clock } from "lucide-react";
+import { FileText, ExternalLink, Clock, MessageSquare } from "lucide-react";
 
 const TABS = [
   { id: "ongoing", label: "Ongoing", statuses: ["accepted", "submitted", "shortlisted"] },
@@ -166,6 +166,16 @@ export default async function MyGigs({
                       </>
                     )}
                   </div>
+                )}
+
+                {s.accepted_at && (
+                  <Link
+                    href={`/submissions/${s.id}/chat`}
+                    className="inline-flex items-center gap-1.5 text-sm text-green hover:underline"
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    {tab === "ongoing" ? `Chat with ${gig.companies?.name ?? "the business"}` : "View chat history"}
+                  </Link>
                 )}
 
                 {s.status === "applied" && s.pitch && (

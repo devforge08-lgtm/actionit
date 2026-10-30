@@ -7,7 +7,7 @@ import AchievementList from "@/components/achievement-list";
 import { formatReward } from "@/lib/format";
 import { tierInfo } from "@/lib/proof-score";
 import type { Achievement } from "@/lib/achievements";
-import { ArrowLeft, FileText, ExternalLink, Paperclip } from "lucide-react";
+import { ArrowLeft, FileText, ExternalLink, Paperclip, MessageSquare } from "lucide-react";
 
 type Profile = {
   full_name: string;
@@ -171,6 +171,7 @@ export default async function ReviewPage({
           <h2 className="brand-eyebrow text-muted-foreground">Accepted · {team.length}</h2>
           {team.map((s) => {
             const p = s.profiles as unknown as Profile;
+            const chatOpen = !winner && (s.status === "accepted" || s.status === "submitted" || s.status === "shortlisted");
             return (
               <div
                 key={s.id}
@@ -192,6 +193,14 @@ export default async function ReviewPage({
                       : "work sent"}
                   </span>
                 </div>
+
+                <Link
+                  href={`/company/gigs/${id}/chat/${s.id}`}
+                  className="inline-flex items-center gap-1.5 text-sm text-green hover:underline"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  {chatOpen ? "Chat with this student" : "View chat history"}
+                </Link>
 
                 {!s.submitted_at ? (
                   <p className="text-sm text-muted-foreground">
