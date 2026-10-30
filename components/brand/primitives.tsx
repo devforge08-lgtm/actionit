@@ -93,9 +93,23 @@ export function ProofRing({
           }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <Num className="text-3xl font-semibold text-green">{value}</Num>
-        <span className="brand-eyebrow text-muted-foreground mt-1">{label}</span>
+      {/* Keep the text inside the ring's inner edge, scaled to the ring size */}
+      <div
+        className="absolute flex flex-col items-center justify-center text-center"
+        style={{ inset: stroke + 6 }}
+      >
+        <span
+          className="brand-num font-semibold leading-none text-green"
+          style={{ fontSize: Math.round(size * 0.26) }}
+        >
+          {value}
+        </span>
+        <span
+          className="brand-eyebrow text-muted-foreground mt-1.5 leading-tight"
+          style={{ fontSize: Math.max(8, size * 0.072), letterSpacing: "0.14em" }}
+        >
+          {label}
+        </span>
       </div>
     </div>
   );

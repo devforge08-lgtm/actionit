@@ -136,7 +136,7 @@ export default async function StudentDashboard() {
         {/* Proof Score */}
         <div className="brand-panel relative overflow-hidden rounded-2xl p-5 sm:p-6">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(123,196,127,0.06),transparent_70%)]" />
-          <div className="relative grid gap-6 md:grid-cols-[auto_1fr_1fr] md:items-center">
+          <div className="relative grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-10">
             <div className="flex items-center gap-5">
               <ProofRing value={profile.proof_score} size={112} />
               <div className="space-y-1">
@@ -153,8 +153,8 @@ export default async function StudentDashboard() {
             <div className="space-y-2">
               {progress ? (
                 <>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress to {progress.next.name}</span>
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground whitespace-nowrap">Progress to {progress.next.name}</span>
                     <Num className="text-green font-medium">{progress.percent}%</Num>
                   </div>
                   <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
@@ -181,7 +181,7 @@ export default async function StudentDashboard() {
                 <ul className="space-y-1.5">
                   {points.map((pt) => (
                     <li key={pt.id} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="truncate">
+                      <span className="min-w-0 truncate">
                         {pt.gig_title}
                         <span className="text-muted-foreground">
                           {" "}· {pt.rating}/10{pt.won && " · won"}
