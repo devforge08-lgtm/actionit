@@ -1,15 +1,21 @@
 import { redirect } from "next/navigation";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
+import AchievementsEditor from "./achievements-editor";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
   const user = await getSessionUser(supabase);
   if (!user) redirect("/login");
 
-  const [{ data: profile }, { data: submissions }] = await Promise.all([
+  const [{ data: profile }, { data: submissions }, { data: achievements }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("submissions").select("status").eq("student_id", user.id),
+    supabase
+      .from("achievements")
+      .select("id, title, description, link")
+      .eq("student_id", user.id)
+      .order("created_at", { ascending: false }),
   ]);
   if (!profile) redirect("/onboarding");
   if (profile.role === "company") redirect("/company");
@@ -95,6 +101,8 @@ export default async function ProfilePage() {
           Coming soon
         </span>
       </div>
+
+      <AchievementsEditor items={achievements ?? []} />
 
       <ProfileForm profile={profile} />
     </div>

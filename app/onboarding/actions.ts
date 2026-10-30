@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
+import { checkAchievement, type AchievementInput } from "@/lib/achievements";
 
 export async function completeOnboarding(formData: FormData) {
   const supabase = await createClient();
@@ -18,6 +19,28 @@ export async function completeOnboarding(formData: FormData) {
   if (!/^[a-z0-9_]{3,30}$/.test(username))
     return { error: "Username: 3–30 chars, lowercase letters, numbers, _" };
   if (role === "company" && !companyName) return { error: "Company name is required" };
+
+  // Optional for students: things they've already built, sent as JSON
+  const achievements: { title: string; description: string | null; link: string }[] = [];
+  if (role === "student") {
+    let raw: AchievementInput[] = [];
+    try {
+      raw = JSON.parse(String(formData.get("achievements") ?? "[]"));
+    } catch {
+      return { error: "Couldn't read your achievements, please try again" };
+    }
+    for (const a of Array.isArray(raw) ? raw.slice(0, 5) : []) {
+      // skip entries left completely empty
+      if (!a?.title?.trim() && !a?.description?.trim() && !a?.link?.trim()) continue;
+      const { value, error: invalid } = checkAchievement({
+        title: String(a.title ?? ""),
+        description: String(a.description ?? ""),
+        link: String(a.link ?? ""),
+      });
+      if (!value) return { error: `Achievement "${a.title || "untitled"}": ${invalid}` };
+      achievements.push(value);
+    }
+  }
 
   // Create the company before setting the role, so a failed insert can't
   // leave a business account with no company (which would loop back here)
@@ -44,6 +67,15 @@ export async function completeOnboarding(formData: FormData) {
   if (error) {
     if (error.code === "23505") return { error: "That username is taken" };
     return { error: error.message };
+  }
+
+  if (achievements.length) {
+    const { error: aErr } = await supabase
+      .from("achievements")
+      .insert(achievements.map((a) => ({ ...a, student_id: user.id })));
+    // The account is set up by now, so don't hold the student here over this;
+    // they can add them again from their profile
+    if (aErr) console.error("onboarding achievements", aErr.message);
   }
 
   redirect(role === "company" ? "/company" : "/dashboard");
