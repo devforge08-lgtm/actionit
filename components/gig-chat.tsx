@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { CHAT_FIELDS } from "@/lib/chat";
 import { AlertTriangle, Lock, Send, X } from "lucide-react";
 
 export type ChatMessage = {
@@ -12,8 +13,6 @@ export type ChatMessage = {
   kind?: string;
   issue_reason?: string | null;
 };
-
-export const CHAT_FIELDS = "id, sender_id, body, created_at, kind, issue_reason";
 
 const ISSUE_REASONS = [
   { id: "brief_unclear", label: "The brief is unclear" },

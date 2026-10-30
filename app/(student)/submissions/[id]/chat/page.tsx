@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient, getSessionUser } from "@/lib/supabase/server";
-import GigChat, { CHAT_FIELDS } from "@/components/gig-chat";
+import GigChat from "@/components/gig-chat";
+import { CHAT_FIELDS } from "@/lib/chat";
 import { ArrowLeft } from "lucide-react";
 
 const ONGOING = ["accepted", "submitted", "shortlisted"];

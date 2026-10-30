@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Bricolage_Grotesque, JetBrains_Mono, Poppins } from "next/font/google";
 import Navbar from "@/components/navbar";
 import Grain from "@/components/brand/grain";
@@ -44,7 +45,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Grain />
-        <Navbar />
+        {/* Reads the URL, so it streams in instead of blocking prerendering */}
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
         {children}
       </body>
     </html>
