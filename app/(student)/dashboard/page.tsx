@@ -319,7 +319,7 @@ export default async function StudentDashboard() {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Recent Submissions</h2>
+                <h2 className="text-lg font-semibold">Recent applications</h2>
                 <Link
                   href="/submissions"
                   className="text-sm text-green hover:underline"

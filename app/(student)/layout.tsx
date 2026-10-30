@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Search,
-  FileText,
+  Briefcase,
   BarChart3,
   User,
   LogOut,
@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Browse Gigs", href: "/gigs", icon: Search },
-  { label: "My Submissions", href: "/submissions", icon: FileText },
+  { label: "My Gigs", href: "/submissions", icon: Briefcase },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { label: "Profile", href: "/profile", icon: User },
 ];

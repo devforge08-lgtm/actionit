@@ -37,7 +37,7 @@ export default async function RevisePage({
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
-        My submissions
+        My gigs
       </Link>
 
       <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.02] to-transparent p-6 space-y-6">
