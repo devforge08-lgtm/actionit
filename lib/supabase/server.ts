@@ -1,7 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 
 export async function createClient() {
+  // Every page that talks to Supabase renders per request. Since Next 16.4.3
+  // cookies() alone no longer covers Date.now() / new Date() during
+  // prefetching, so this marks the render as request-time explicitly.
+  await connection();
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
